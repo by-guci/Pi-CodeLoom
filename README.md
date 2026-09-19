@@ -99,6 +99,10 @@ npm run dev
 
 ## 构建与开发
 
+**Windows 一键生成 EXE 安装包**：双击项目根目录的 [`build-exe.cmd`](./build-exe.cmd)，或在项目目录执行 `npm run package:exe`。脚本会检查环境、在缺少依赖时安装依赖、检查类型、构建源码并生成 x64 NSIS 安装包；任一步失败都会停止并显示错误。
+
+输出文件为 `dist/Pi-CodeLoom-Setup-<版本号>-x64.exe`，同时生成 `latest.yml` 和 `.blockmap` 更新文件。脚本仅本地打包，不会自动发布或安装。需要重新安装依赖时，先运行 `npm ci`。
+
 ```bash
 npm run typecheck     # TypeScript 类型检查
 npm run lint          # 代码检查

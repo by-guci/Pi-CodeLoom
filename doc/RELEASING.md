@@ -22,6 +22,8 @@ Pi-CodeLoom 使用 `electron-updater` 检查本仓库的正式 GitHub Release。
 
 ## 发布流程
 
+在 Windows 上，可双击根目录的 `build-exe.cmd`，或运行 `npm run package:exe`，生成本地 NSIS 安装包及更新元数据。输出位于 `dist/`；脚本不会创建 GitHub Release。
+
 先提交本次功能修改，确保 `CHANGELOG.md` 包含目标版本的说明。以下以从 `1.0.7` 发布 `1.0.8` 为例：
 
 ```bash

@@ -99,6 +99,10 @@ Existing terminal pi configuration can be reused. Model credentials, extensions,
 
 ## Build and development
 
+**Build a Windows EXE installer**: double-click [`build-exe.cmd`](./build-exe.cmd) in the project root, or run `npm run package:exe`. The script checks Node.js, installs dependencies when build tools are missing, checks types, builds the app, and generates an x64 NSIS installer. It stops and reports the error if any step fails.
+
+Output: `dist/Pi-CodeLoom-Setup-<version>-x64.exe`, along with `latest.yml` and `.blockmap` update files. The script builds locally without publishing or installing the application. To reinstall dependencies, run `npm ci` first.
+
 ```bash
 npm run typecheck     # TypeScript checks
 npm run lint          # Lint source code
