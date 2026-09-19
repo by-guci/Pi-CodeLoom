@@ -89,7 +89,7 @@ export function useReviewGitData(options: {
     })
     const request = (async () => {
       try {
-        const response = await ipcClient.invoke('review.getDiff', { sessionId: '', scope: 'git' })
+        const response = await ipcClient.invoke('review.getDiff', { sessionId: '', scope: 'git', cwd: requestIdentity })
         if (identityRef.current !== requestIdentity) return
         const next = normalizeGitData((response?.diff || {}) as RawGitDiff)
         const previous = dataRef.current.identity === requestIdentity ? dataRef.current.data : null

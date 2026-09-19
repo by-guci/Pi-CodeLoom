@@ -20,6 +20,8 @@ import { createShellSlice } from '@renderer/stores/ui-store-shell-slice'
 import { createRuntimeSlice } from '@renderer/stores/ui-store-runtime-slice'
 import { workspacePathKey } from '@shared/workspace-path'
 import { isAbortQueueIgnoreActive } from '@renderer/lib/abort-ui-hold'
+import { mergeLiveTimelineWithHistoryTail } from '@renderer/lib/merge-live-history-timeline'
+import { resolveMergedStreamingAssistantId } from '@renderer/lib/streaming-timeline-preserve'
 
 export type { TimelineItem, UIState } from '@renderer/stores/ui-store-types'
 
@@ -90,6 +92,7 @@ export const useUIStore = create<UIState>()(
     })
   },
   loadHistoryItems: (items: TimelineItem[]) => {
+    flushStreamPendingSync(get, set)
     const {
       lastModel,
       lastThinking,
@@ -100,6 +103,7 @@ export const useUIStore = create<UIState>()(
       sessionRuntimeRunning,
       optimisticPendingUserText,
       agentTurnBootstrapping,
+      timelineItems,
     } = get()
     const viewingWorkerSession = isViewingWorkerBoundSession(historySessionFile, workerLiveSnapshot.sessionFile)
     let runtimeHere = false
@@ -123,10 +127,15 @@ export const useUIStore = create<UIState>()(
       runtimeHere ||
       localTurn ||
       (viewingWorkerSession && workerLiveSnapshot.status === 'running')
-    const cleaned = projectTimelineItems(sanitizeHistoryTimeline(items))
+    const history = sanitizeHistoryTimeline(items)
+    const cleaned = projectTimelineItems(
+      keepRunning ? mergeLiveTimelineWithHistoryTail(history, timelineItems) : history,
+    )
     set({
       timelineItems: cleaned,
-      streamingAssistantId: keepRunning ? streamingAssistantId : null,
+      streamingAssistantId: keepRunning
+        ? resolveMergedStreamingAssistantId(cleaned, timelineItems, streamingAssistantId)
+        : null,
       fileChanges: [],
       runState: {
         ...runState,

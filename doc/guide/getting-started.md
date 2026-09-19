@@ -2,15 +2,15 @@
 
 **[简体中文](./getting-started.zh-CN.md)**
 
-Hands-on guide for first-time **pi Desktop** users. Screenshots: [../images/](../images/) (replace placeholder with `overview.png` when publishing).
+Hands-on guide for first-time **Pi-CodeLoom** users. Screenshots: [../images/](../images/) (replace placeholder with `overview.png` when publishing).
 
 ---
 
 ## 1. Install & run
 
 ```bash
-git clone https://github.com/justhil/pi-app.git
-cd pi-app
+git clone https://github.com/by-guci/Pi-CodeLoom.git
+cd Pi-CodeLoom
 npm install
 npm run dev
 ```
@@ -19,7 +19,7 @@ npm run dev
 
 **Windows installer (build locally)**: `npm run icon:export && npm run package:win` → `dist/`
 
-**Prebuilt**: [GitHub Releases](https://github.com/justhil/pi-app/releases/latest) — Setup and Portable `.exe`.
+**Prebuilt**: [GitHub Releases](https://github.com/by-guci/Pi-CodeLoom/releases) — Setup and Portable `.exe`.
 
 ---
 
@@ -45,13 +45,12 @@ npm run dev
 | Jump to node | Hover message → Undo, or session tree |
 | Model / thinking | Composer bottom pills |
 | Language | **Settings → General** → 中文 / English |
-| Voice | Composer mic; **Settings → Voice** for codex-asr |
 | Attach (file tree) | Right panel **Files** → **drag a file** onto the composer (folders cannot be dragged); or right-click → **Add to chat** |
 | Multi-tab preview | **Files** tree: `Ctrl`/`⌘`+click, or right-click → **Open in new tab**; middle-click closes; drag tabs to reorder |
 | Wide preview | **Files** toolbar **Expand preview** (fills chat column; inner file tree collapse unchanged) |
 | Attach (other) | Drag from Explorer into composer, `+` picker, `Ctrl+V` for images |
 
-Full shortcut table: [README.md](../../README.md#keyboard-shortcuts).
+Full shortcut table: [README.en.md](../../README.en.md#keyboard-shortcuts).
 
 ---
 
@@ -74,7 +73,6 @@ Lists: [adapters.en.md](./adapters.en.md). Authoring: [adapter-authoring-guide.m
 | Blank UI / stale HMR | Remove `node_modules/.vite`, `npm run dev` |
 | Extension in settings, no tools | Check `packages`, **restart session** |
 | Slow session switch | Recent tail first; full bind on send/tree jump |
-| Voice not working | Settings → Voice; text input still works |
 | Dialog dismissed | Timeline **Continue** or clear “answer later” |
 
 Community: [LinuxDo](https://linux.do/)

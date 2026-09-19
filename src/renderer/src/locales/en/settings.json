@@ -18,7 +18,7 @@
     "prompts": "Prompts",
     "extensions": "Extensions",
     "adapters": "Adapters",
-    "voice": "Voice"
+    "about": "About"
   },
   "general": {
     "title": "General",
@@ -26,20 +26,6 @@
     "startup": "Startup",
     "openLastProject": "Reopen last project on launch",
     "openLastProjectDesc": "Automatically restore the last opened project directory",
-    "autoCheckUpdate": "Check for updates automatically",
-    "autoCheckUpdateDesc": "Background check of GitHub Releases after launch; shows notes and one-click install when available",
-    "prerelease": "Include prereleases",
-    "prereleaseDesc": "Also consider GitHub prerelease versions when checking for updates.",
-    "appVersion": "App version",
-    "appVersionDesc": "Check now; if an update exists, show notes and one-click install",
-    "checkUpdate": "Check for updates",
-    "openGitHub": "GitHub",
-    "checking": "Checking…",
-    "updateCheckFailed": "Check failed",
-    "updateHasNew": "New version v{{version}} available (current v{{current}})",
-    "updateLatest": "Up to date (v{{version}})",
-    "foundNewVersion": "New version v{{version}} found",
-    "openReleasePage": "Open release page",
     "alert": "Alerts",
     "alertSectionDesc": "Manage sound, OS notifications, and interaction alerts that need immediate attention.",
     "macNotifyHint": "On macOS, allow notifications in System Settings or banners will not appear.",
@@ -104,7 +90,8 @@
     "fixedOrder": "Keep project order fixed",
     "fixedOrderDesc": "Keep the project list order stable when opening projects (new ones append to the end); off = most recently used first (default)",
     "noRecentProjects": "No recent projects yet",
-    "noRecentProjectsHint": "Open a workspace to see it here"
+    "noRecentProjectsHint": "Open a workspace to see it here",
+    "localMaintenance": "This app is maintained locally."
   },
   "runtime": {
     "sectionAgentRuntime": "Agent runtime",
@@ -144,7 +131,82 @@
     "theme": "Theme",
     "themeTitle": "Theme",
     "themeLabel": "Interface theme",
-    "themeDesc": "Choose light, dark, or follow system",
+    "themeDesc": "Switch between light, dark, and system while keeping your palette.",
+    "colorMode": "Color mode",
+    "builtinPalettes": "Built-in palettes",
+    "builtinPalettesDesc": "Every palette includes light and dark versions that follow your color mode.",
+    "resetPalette": "Reset palette",
+    "currentPalette": "Current palette: {{name}}",
+    "customize": "Fine-tune palette",
+    "customizeDesc": "Edit one version while keeping the other unchanged.",
+    "editVariant": "Version to edit",
+    "colorDetails": "Colors and fonts",
+    "palettes": {
+      "clay-hearth": {
+        "name": "Claude · Clay",
+        "description": "Warm paper & terracotta"
+      },
+      "codex": {
+        "name": "Codex · Graphite",
+        "description": "Neutral gray & clear blue"
+      },
+      "nord": {
+        "name": "Nord · Aurora",
+        "description": "Glacier gray & frost blue"
+      },
+      "rose-pine": {
+        "name": "Rosé Pine · Moon",
+        "description": "Soft mist & rose gold"
+      },
+      "catppuccin": {
+        "name": "Catppuccin · Cream",
+        "description": "Cream & soft mauve"
+      },
+      "tokyo-night": {
+        "name": "Tokyo · Neon",
+        "description": "Cool neutrals & indigo"
+      },
+      "gruvbox": {
+        "name": "Gruvbox · Dune",
+        "description": "Warm sand & amber"
+      },
+      "ledger-paper": {
+        "name": "Ledger · Brass",
+        "description": "Parchment & aged brass"
+      },
+      "mosswood": {
+        "name": "Mosswood",
+        "description": "Woodland mist & moss"
+      },
+      "ocean": {
+        "name": "Ocean · Tide",
+        "description": "Sea salt & deep teal"
+      },
+      "jade-mist": {
+        "name": "Jade Mist",
+        "description": "Jade white & emerald"
+      },
+      "sakura-ink": {
+        "name": "Sakura Ink",
+        "description": "Cherry blossom & berry"
+      },
+      "amber-noir": {
+        "name": "Amber Voyage",
+        "description": "Warm porcelain & amber"
+      },
+      "violet-dusk": {
+        "name": "Violet Dusk",
+        "description": "Soft mist & smoky violet"
+      },
+      "moonstone": {
+        "name": "Moonstone",
+        "description": "Moon white & cool graphite"
+      },
+      "citrus-terminal": {
+        "name": "Citrus Terminal",
+        "description": "Lime white & vivid green"
+      }
+    },
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
@@ -165,8 +227,11 @@
     "presetDefault": "Pi default",
     "presetVscodePlus": "VS Code Plus (light)",
     "presetCodex": "Codex (dark)",
+    "presetClayHearth": "Clay Hearth",
+    "presetLedgerPaper": "Ledger Paper",
+    "presetMosswood": "Mosswood",
     "presetCustom": "Custom",
-    "defaultSlotHint": "Pi's default appearance is active. Choose a preset or import a theme to edit this slot.",
+    "defaultSlotHint": "Choose a built-in palette above or import a theme to start fine-tuning.",
     "accent": "Accent",
     "accentDesc": "Brand indicator, selection, and focus color.",
     "accentPicker": "Accent color picker",
@@ -179,6 +244,14 @@
     "inkDesc": "Primary text anchor used to derive secondary and disabled text.",
     "inkPicker": "Foreground color picker",
     "inkHex": "Foreground hex value",
+    "diffAdded": "Added color",
+    "diffAddedDesc": "Color used for added lines in Review / diffs.",
+    "diffAddedPicker": "Added color picker",
+    "diffAddedHex": "Added hex value",
+    "diffRemoved": "Removed color",
+    "diffRemovedDesc": "Color used for removed lines in Review / diffs.",
+    "diffRemovedPicker": "Removed color picker",
+    "diffRemovedHex": "Removed hex value",
     "fontUi": "UI font",
     "fontUiDesc": "Enter a locally installed font name only. Empty uses the system stack.",
     "fontUiPlaceholder": "Default system font",
@@ -209,7 +282,7 @@
     "importTarget": "Target slot",
     "importSource": "Source format",
     "importIgnored": "Unsupported fields",
-    "singleVariantHint": "A Codex theme string carries one variant, so it fills either the light or dark card. If its variant differs from the card you opened, the payload target wins.",
+    "singleVariantHint": "Each theme string contains one version and is imported into its specified light or dark mode.",
     "unsupportedFields": "{{count}} field(s) are unsupported in this version and were safely ignored.",
     "unsupportedHint": "Fields without a Pi equivalent, such as codeThemeId and semanticColors.skill, are safely ignored and counted during import.",
     "shikiHint": "Code highlighting (Shiki) does not yet follow custom themes.",
@@ -271,6 +344,12 @@
     "switchSuccessUser": "Switched to standalone env",
     "switchFailed": "Switch failed",
     "upgradeEnv": "Upgrade standalone env",
+    "upgradeGlobal": "Upgrade global env",
+    "upgradeGlobalAction": "Upgrade global",
+    "upgradingGlobal": "Upgrading…",
+    "globalUpgradeFailed": "Global upgrade failed",
+    "globalUpgradeSuccess": "Global SDK upgraded to {{version}}",
+    "globalUpgradeRestartRequired": "Restart the desktop app to apply it.",
     "selectVersion": "Select version…",
     "latest": "(latest)",
     "installing": "Installing…",
@@ -305,6 +384,8 @@
     "thinkingMedium": "Medium",
     "thinkingHigh": "High",
     "thinkingXhigh": "Extra high",
+    "thinkingMax": "Max",
+    "thinkingUltra": "Ultra",
     "modelWhitelist": "Model whitelist",
     "modelWhitelistDesc": "enabledModels, comma-separated globs (empty = all)",
     "hideThinking": "Hide thinking blocks",
@@ -520,68 +601,10 @@
     "providerLabelPrefix": "Provider",
     "noModelToAdd": "No models to add",
     "cancelBtn": "Cancel",
-    "ctrlEnterHint": "Ctrl+Enter to confirm"
-  },
-  "voice": {
-    "advancedTitle": "Advanced",
-    "clearSavedToken": "Clear saved token",
-    "accessTokenStoredPlaceholder": "Saved ({{preview}}). Leaving this empty keeps it; paste a new token to replace it.",
-    "title": "Voice Input",
-    "description": "Configure a transcription provider for Composer voice-to-text. When not configured, text input is unaffected.",
-    "provider": "Provider",
-    "providerNone": "Disabled",
-    "providerCli": "codex-asr CLI",
-    "providerServe": "codex-asr serve",
-    "cliBinaryPath": "Binary path",
-    "cliBinaryPathDesc": "Path to the codex-asr executable",
-    "autoDetect": "Auto-detect",
-    "detecting": "Detecting…",
-    "detectFound": "Found: {{path}}",
-    "detectNotFound": "codex-asr not found in PATH",
-    "serverUrl": "Server URL",
-    "serverUrlDesc": "codex-asr serve listen address (default http://127.0.0.1:8788)",
-    "apiKey": "API Key",
-    "apiKeyDesc": "Required when serve is started with --api-key",
-    "language": "Language",
-    "languageAuto": "Auto-detect",
-    "timeout": "Timeout (seconds)",
-    "testConnection": "Test connection",
-    "testing": "Testing…",
-    "testSuccess": "Connection successful",
-    "testFailed": "Connection failed",
-    "installHint": "Installation",
-    "installUrl": "https://github.com/Wangnov/codex-asr/releases/latest",
-    "langZh": "Chinese",
-    "langEn": "English",
-    "descriptionBuiltin": "In-app transcription via your ChatGPT / Codex session (no OpenAI API key, no local codex-asr process).",
-    "builtinTitle": "Built-in voice service",
-    "builtinDesc": "Paste an access_token or use ~/.codex/auth.json; requests go to the ChatGPT transcribe API.",
-    "builtinOn": "Enabled",
-    "builtinEnable": "Enable built-in",
-    "codexLogin": "Codex sign-in",
-    "codexLoginDesc": "Paste a JWT (eyJ…) or import from auth.json. Checks stay on-device. Until you Save at the bottom, Composer may still use the last saved config.",
-    "pullCodexAuth": "Read login from local Codex",
-    "codexAuthOk": "Valid login detected",
-    "codexAuthMissing": "No login detected",
-    "tokenPreview": "Token preview: {{preview}}",
-    "authFileOverride": "auth.json path (optional)",
-    "authFilePlaceholder": "Default ~/.codex/auth.json",
-    "bundledBinaryOk": "Bundled codex-asr binary present.",
-    "bundledBinaryFallback": "Without a bundled binary, PATH codex-asr is used (install separately).",
-    "serveRunning": "Service running",
-    "showAdvanced": "Advanced: CLI / external serve",
-    "advancedHint": "Optional: local codex-asr CLI or your own HTTP serve. Built-in direct API is the default.",
-    "unsavedVoiceHint": "Voice settings changed but not saved. Composer previews this draft; use Save at the bottom to persist.",
-    "cliInstallHint": "Only needed when using advanced CLI mode",
-    "hideAdvanced": "Hide advanced",
-    "localApiKeyPlaceholder": "Local serve API key (not ChatGPT token)",
-    "accessTokenManual": "access_token (manual)",
-    "accessTokenPlaceholder": "Paste ChatGPT JWT (eyJ…); saved value overrides auth.json",
-    "verifyAuth": "Verify login",
-    "fillFromAuthFile": "Fill from auth.json",
-    "authSourceManual": "manual",
-    "authSourceFile": "from file",
-    "builtinRuntimeHint": "Built-in uses in-app direct calls to ChatGPT transcribe (https://chatgpt.com/backend-api/transcribe). No codex-asr binary or local serve required."
+    "ctrlEnterHint": "Ctrl+Enter to confirm",
+    "lookupFill": "Fill from models.dev",
+    "lookupFilled": "Filled {{id}} from models.dev",
+    "lookupMiss": "{{id}} not found on models.dev"
   },
   "prompts": {
     "title": "Prompts & Context",
@@ -711,5 +734,14 @@
   "common_confirm": {
     "confirm": "OK",
     "cancel": "Cancel"
+  },
+  "about": {
+    "title": "About",
+    "description": "Installed Pi-CodeLoom version and runtime details.",
+    "sectionApp": "App",
+    "appName": "App name",
+    "version": "Version",
+    "platform": "Platform",
+    "sectionRuntime": "Runtime"
   }
 }

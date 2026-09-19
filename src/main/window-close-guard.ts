@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { workerManager } from './worker-manager'
+import { getMainWindow } from './window'
 
 /**
  * Closing the window while an agent turn is running would abort the in-flight
@@ -33,7 +34,8 @@ const WAIT_POLL_MS = 500
 const DECISION_ACK_TIMEOUT_MS = 60 * 1000
 
 function getWindow(): BrowserWindow | null {
-  return BrowserWindow.getAllWindows()[0] ?? null
+  const win = getMainWindow()
+  return win && !win.isDestroyed() ? win : null
 }
 
 function stopWaitPoll(): void {
@@ -142,6 +144,7 @@ export function guardAppQuit(event: { preventDefault: () => void }): boolean {
     return false
   }
   if (workerManager.hasActiveTurns) {
+    if (!getWindow()) return true
     event.preventDefault()
     requestCloseDecision('app')
     return false

@@ -1,4 +1,9 @@
 {
+  "outline": {
+    "label": "Conversation outline",
+    "jump": "Jump to turn {{index}}: {{title}}",
+    "attachment": "Attachment message"
+  },
   "placeholder": "Start a conversation",
   "compaction": {
     "summary": "Compressed {{count}}",

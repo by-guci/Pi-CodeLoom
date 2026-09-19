@@ -1,8 +1,8 @@
-# pi Desktop 扩展适配器文档（给 AI / 扩展作者）
+# Pi-CodeLoom 扩展适配器文档（给 AI / 扩展作者）
 
 **[English](./README.md)**
 
-本目录是 **pi Desktop 兼容层 v2** 的独立说明包，可整份复制给任意 AI，用于为 **pi npm 扩展** 编写或更新 **`adapter.json`**，无需阅读整个 pi-app 源码。
+本目录是 **Pi-CodeLoom 兼容层 v2** 的独立说明包，可整份复制给任意 AI，用于为 **pi npm 扩展** 编写或更新 **`adapter.json`**，无需阅读整个 Pi-CodeLoom 源码。
 
 ## 用户指南（安装、快捷键、适配器列表）
 
@@ -24,7 +24,7 @@
 ## 给 AI 的提示词（可直接粘贴）
 
 ```text
-你是 pi Desktop 扩展适配器作者。只根据仓库 doc/adapter-authoring-guide.md（及必要时 doc/adapter-layer-plan.md）工作。
+你是 Pi-CodeLoom 扩展适配器作者。只根据仓库 doc/adapter-authoring-guide.md（及必要时 doc/adapter-layer-plan.md）工作。
 
 任务：为 npm 扩展「<包名>」编写或更新 adapter.json。
 已知信息：<列出 registerTool 名、registerCommand、配置文件路径、是否会弹 ctx.ui 问卷/审图等>。
@@ -53,4 +53,4 @@
 
 ---
 
-*pi Desktop — pi 内核，桌面壳 + 声明式适配器。*
+*Pi-CodeLoom — pi 内核，桌面壳 + 声明式适配器。*

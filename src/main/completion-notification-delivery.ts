@@ -32,6 +32,12 @@ let hoverPaused = false
 let expireTimer: ReturnType<typeof setTimeout> | null = null
 const active: ActiveCard[] = []
 let listenersBound = false
+let onNotificationResolved: ((notificationId: string) => void) | null = null
+let hostGeneration = 0
+
+export function setNotificationResolvedHandler(handler: ((notificationId: string) => void) | null): void {
+  onNotificationResolved = handler
+}
 
 function preferSystem(mode: DeliveryMode): boolean {
   return mode === 'system' || hostFailed
@@ -140,6 +146,7 @@ function dismissCard(id: string): void {
   const index = active.findIndex((card) => card.notificationId === id)
   if (index >= 0) active.splice(index, 1)
   forgetNotificationTarget(id)
+  onNotificationResolved?.(id)
   if (active.length === 0) hideHost()
   else {
     placeHost()
@@ -151,22 +158,31 @@ function dismissCard(id: string): void {
 async function createHost(): Promise<boolean> {
   if (host && !host.isDestroyed()) return true
   ensureListeners()
+  const generation = hostGeneration
+  let createdHost: BrowserWindow | null = null
   try {
-    host = new BrowserWindow(
+    createdHost = new BrowserWindow(
       completionNotificationWindowOptions(join(__dirname, '../preload/notification.cjs')),
     )
-    host.setMenu(null)
-    host.on('closed', () => {
-      host = null
-      hostReady = false
+    host = createdHost
+    createdHost.setMenu(null)
+    createdHost.on('closed', () => {
+      if (host === createdHost) {
+        host = null
+        hostReady = false
+      }
     })
-    await host.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(notificationHostPageHtml())}`)
+    await createdHost.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(notificationHostPageHtml())}`)
+    if (generation !== hostGeneration || host !== createdHost || createdHost.isDestroyed()) {
+      if (!createdHost.isDestroyed()) createdHost.destroy()
+      return false
+    }
     return placeHost()
   } catch (error) {
     traceAudio('notification.host.fail', { error: String(error) })
     hostFailed = true
-    if (host && !host.isDestroyed()) host.destroy()
-    host = null
+    if (createdHost && !createdHost.isDestroyed()) createdHost.destroy()
+    if (host === createdHost) host = null
     return false
   }
 }
@@ -198,7 +214,9 @@ export async function openNotificationTarget(notificationId: string): Promise<bo
     return false
   }
   if (!target.sessionFile) return true
-  if (target.sessionFile) {
+  // sessionId 已知时直接打开，无需读盘；仅在缺失时用文件头兜底，
+  // 避免会话文件瞬时不可读（readSessionMetaFromFile 返回 null）被误判为「会话已删除」。
+  if (!target.sessionId) {
     const meta = readSessionMetaFromFile(target.sessionFile)
     if (!meta) {
       win?.webContents.send('ipc:notification-open-session', {
@@ -208,8 +226,9 @@ export async function openNotificationTarget(notificationId: string): Promise<bo
       })
       return false
     }
-    target.sessionId = target.sessionId || meta.sessionId
+    target.sessionId = meta.sessionId
   }
+  onNotificationResolved?.(notificationId)
   win?.webContents.send('ipc:notification-open-session', {
     ok: true,
     workspaceId: target.workspaceId,
@@ -257,6 +276,7 @@ export function focusCompletionNotificationHost(): boolean {
 }
 
 export function disposeCompletionDelivery(): void {
+  hostGeneration += 1
   if (expireTimer) clearTimeout(expireTimer)
   expireTimer = null
   active.length = 0

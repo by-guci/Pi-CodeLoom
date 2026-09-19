@@ -7,10 +7,8 @@ import { hydrateIconThemeFromSettings } from './components/icons'
 import { hydrateLanguageFromSettings } from './lib/i18n'
 import './lib/startup-toast-guard'
 import { ensureExtensionUIChannel } from './lib/extension-ui-channel'
-import { ensureAppUpdateNotify } from './lib/app-update-notify'
 
 ensureExtensionUIChannel()
-ensureAppUpdateNotify()
 
 const App = React.lazy(() => import('./app/app'))
 

@@ -11,6 +11,7 @@ vi.mock('../config-store', () => ({
 }))
 
 import { runGit, commitChanges, stageHunks, unstageHunks, readGitWorkspaceSnapshot } from '../git-workspace'
+import { parseGitDiff } from '../../../packages/shared/diff-model'
 
 const tempDirs: string[] = []
 
@@ -22,6 +23,7 @@ function makeRepo(): string {
   git(['init', '-q'])
   git(['config', 'user.email', 'test@example.com'])
   git(['config', 'user.name', 'test'])
+  git(['config', 'core.autocrlf', 'false'])
   writeFileSync(join(dir, 'a.txt'), 'hello\n')
   git(['add', '.'])
   git(['commit', '-q', '-m', 'init'])
@@ -97,5 +99,35 @@ describe('git-workspace host mode', () => {
     expect(snap.stagedRaw).toContain('world')
     expect(snap.status).toContain('extra.txt')
     expect(snap.raw).toContain('fresh')
+  })
+
+  it.each(['fresh\n', 'fresh', 'fresh\n\n', '中文\r\n', ''])('stages a new file without changing its bytes (%j)', async (content) => {
+    const dir = makeRepo()
+    writeFileSync(join(dir, 'new.txt'), content)
+    const snap = await readGitWorkspaceSnapshot(dir)
+    const file = parseGitDiff(snap.raw).find((entry) => entry.path === 'new.txt')!
+    expect(file.hunks).toHaveLength(1)
+    expect(stageHunks(dir, [{ path: file.path, hunkPatches: file.hunks.map((hunk) => hunk.patch!) }])).toEqual({ ok: true })
+    const staged = execFileSync('git', ['show', ':new.txt'], { cwd: dir })
+    expect(staged).toEqual(readFileSync(join(dir, 'new.txt')))
+    expect(execFileSync('git', ['diff', '--', 'new.txt'], { cwd: dir, encoding: 'utf-8' })).toBe('')
+  })
+
+  it.each([
+    ['old', 'new'],
+    ['old\n', 'new'],
+    ['old', 'new\n'],
+  ])('stages and unstages an EOF change from %j to %j', (before, after) => {
+    const dir = makeRepo()
+    writeFileSync(join(dir, 'a.txt'), before)
+    execFileSync('git', ['add', '--', 'a.txt'], { cwd: dir })
+    writeFileSync(join(dir, 'a.txt'), after)
+    const raw = execFileSync('git', ['diff', '--', 'a.txt'], { cwd: dir, encoding: 'utf-8' })
+    const file = parseGitDiff(raw)[0]
+    expect(stageHunks(dir, [{ path: file.path, hunkPatches: file.hunks.map((hunk) => hunk.patch!) }])).toEqual({ ok: true })
+    expect(execFileSync('git', ['show', ':a.txt'], { cwd: dir, encoding: 'utf-8' })).toBe(after)
+    expect(unstageHunks(dir, [{ path: file.path, hunkPatches: file.hunks.map((hunk) => hunk.patch!) }])).toEqual({ ok: true })
+    expect(execFileSync('git', ['show', ':a.txt'], { cwd: dir, encoding: 'utf-8' })).toBe(before)
+    expect(readFileSync(join(dir, 'a.txt'), 'utf-8')).toBe(after)
   })
 })

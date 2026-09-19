@@ -1,4 +1,9 @@
 {
+  "outline": {
+    "label": "对话大纲",
+    "jump": "跳转到第 {{index}} 轮：{{title}}",
+    "attachment": "附件消息"
+  },
   "placeholder": "开始对话",
   "compaction": {
     "summary": "已压缩 {{count}} 条",

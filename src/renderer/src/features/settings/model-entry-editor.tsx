@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight, Plus, Trash2 } from '@renderer/components/icons'
+import { ArrowRight, ChevronRight, Plus, Sparkles, Trash2 } from '@renderer/components/icons'
 import { useTranslation } from 'react-i18next'
 import { inputCls as settingsInputCls } from '@renderer/features/settings/settings-controls'
 import { cn } from '@renderer/lib/utils'
@@ -17,6 +17,7 @@ const THINKING_LEVEL_OPTIONS = [
   'high',
   'xhigh',
   'max',
+  'ultra',
 ] as const
 
 export function ModelEntryEditor({
@@ -24,12 +25,14 @@ export function ModelEntryEditor({
   expanded,
   onToggleExpand,
   onChange,
+  onFill,
   onRemove,
 }: {
   model: LocalModelEntry
   expanded: boolean
   onToggleExpand: () => void
   onChange: (patch: Partial<LocalModelEntry>) => void
+  onFill?: () => void
   onRemove: () => void
 }) {
   const { t } = useTranslation('settings')
@@ -127,6 +130,17 @@ export function ModelEntryEditor({
             )}
           </div>
         </button>
+        {onFill && (
+          <button
+            type="button"
+            className="chrome-icon-btn rounded-md p-1.5 text-muted-foreground hover:text-foreground"
+            onClick={onFill}
+            aria-label={t('models.lookupFill')}
+            title={t('models.lookupFill')}
+          >
+            <Sparkles className="h-3 w-3" strokeWidth={2} />
+          </button>
+        )}
         <button
           type="button"
           className="chrome-icon-btn rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"

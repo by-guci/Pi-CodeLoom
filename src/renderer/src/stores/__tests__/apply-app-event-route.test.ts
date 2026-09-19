@@ -41,6 +41,53 @@ describe('resolveAppEventRoute', () => {
     ).toBe('visible')
   })
 
+  it.each([
+    ['C:\\Work\\Project', 'C:/Work/Project'],
+    ['C:\\Work\\Project', 'c:\\work\\PROJECT\\'],
+    ['\\\\wsl$\\Ubuntu\\home\\me\\project', '//wsl.localhost/ubuntu/home/me/project/'],
+  ])('keeps the viewed session visible for equivalent workspaces %s and %s', (currentWorkspace, workspaceId) => {
+    expect(
+      resolveAppEventRoute(
+        { ...baseState, currentWorkspace },
+        {
+          type: 'message',
+          role: 'assistant',
+          phase: 'delta',
+          text: 'next token',
+          seq: 1,
+          workspaceId,
+          sessionFile: baseState.historySessionFile,
+          sessionId: baseState.currentSessionId,
+          timestamp: 1,
+        },
+      ),
+    ).toBe('visible')
+  })
+
+  it.each([
+    ['C:\\Work\\Project', 'C:/Work/Other', '/tmp/preview.jsonl'],
+    ['C:\\Work\\Project', 'c:/work/project', '/tmp/live.jsonl'],
+    ['/home/me/Project', '/home/me/project', '/tmp/preview.jsonl'],
+    ['//wsl$/Ubuntu/home/me/Project', '//wsl.localhost/ubuntu/home/me/project', '/tmp/preview.jsonl'],
+  ])('keeps another workspace or session in the background (%s, %s, %s)', (currentWorkspace, workspaceId, sessionFile) => {
+    expect(
+      resolveAppEventRoute(
+        { ...baseState, currentWorkspace },
+        {
+          type: 'message',
+          role: 'assistant',
+          phase: 'delta',
+          text: 'background token',
+          seq: 1,
+          workspaceId,
+          sessionFile,
+          sessionId: baseState.currentSessionId,
+          timestamp: 1,
+        },
+      ),
+    ).toBe('background')
+  })
+
   it('routes worker-bound events as visible when viewFile is null (first send)', () => {
     expect(
       resolveAppEventRoute(

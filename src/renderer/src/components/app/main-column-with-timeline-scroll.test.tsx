@@ -30,6 +30,22 @@ describe('MainColumnWithTimelineScroll', () => {
     expect(event.defaultPrevented).toBe(false)
   })
 
+  it('should_leave_wheel_to_the_native_timeline_scrollport', () => {
+    const { getByTestId } = render(
+      <MainColumnWithTimelineScroll>
+        <div className="timeline-scroll-viewport">
+          <div className="overlay-scroll-pane" data-testid="timeline-target">timeline content</div>
+        </div>
+      </MainColumnWithTimelineScroll>,
+    )
+
+    const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 80 })
+    getByTestId('timeline-target').dispatchEvent(event)
+
+    expect(scrollTimelineByDeltaMock).not.toHaveBeenCalled()
+    expect(event.defaultPrevented).toBe(false)
+  })
+
   it('should_forward_wheel_when_target_is_ordinary_main_column_content', () => {
     const { getByTestId } = render(
       <MainColumnWithTimelineScroll>

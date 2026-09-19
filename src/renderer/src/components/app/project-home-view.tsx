@@ -65,7 +65,7 @@ export function ProjectHomeView({
 
   return (
     <div className="project-home-view absolute inset-0 flex flex-col items-center justify-center px-8 transition-all duration-[var(--motion-slow)] ease-[var(--motion-ease)]">
-      <div className="-translate-y-[10rem] text-center">
+      <div className="text-center">
         <h2 className="text-[22px] font-semibold text-foreground">
           {showProjectPicker && hasProject ? (
             <>

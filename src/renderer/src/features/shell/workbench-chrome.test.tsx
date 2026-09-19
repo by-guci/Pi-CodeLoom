@@ -6,9 +6,8 @@ import { NotificationInbox } from './notification-inbox'
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn().mockResolvedValue({}), switchSession: vi.fn(), activateWorkspace: vi.fn() }))
 vi.mock('react-i18next', async (importOriginal) => ({ ...await importOriginal<typeof import('react-i18next')>(), useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }) }))
-vi.mock('@renderer/lib/ipc-client', () => ({ ipcClient: { invoke: mocks.invoke }, onAppUpdateAvailable: () => () => {} }))
+vi.mock('@renderer/lib/ipc-client', () => ({ ipcClient: { invoke: mocks.invoke } }))
 vi.mock('@renderer/lib/activate-workspace', () => ({ switchSessionInPlace: mocks.switchSession, activateWorkspace: mocks.activateWorkspace }))
-vi.mock('@renderer/lib/app-update-notify', () => ({ showAppUpdateDialog: vi.fn() }))
 
 const session = { sessionId: 'wait', sessionFile: '/sessions/wait.jsonl', title: 'A long session title that remains readable in the activity list', workspaceId: '/project', modelId: '', updatedAt: 1 }
 const worker = { sessionFile: session.sessionFile, running: true, cwd: '/project' }
@@ -92,15 +91,21 @@ describe('Notification inbox feedback', () => {
     expect(screen.queryByText('common:notification.empty')).not.toBeInTheDocument()
   })
 
-  it('shows timestamps and waits for unread mutation before reloading', async () => {
+  it('shows timestamps and dismisses a known notification', async () => {
     useUIStore.setState({ sessionAttention: {} })
-    const item = { notificationId: 'n1', workspaceId: '/project', sessionFile: session.sessionFile, sessionId: 'wait', unread: false, createdAt: 1788602400000, outcome: 'success', copy: { title: 'Finished task', body: 'The task is complete.' } }
-    mocks.invoke.mockImplementation(async (method: string) => method === 'notifications.inbox' ? { items: [item] } : { ok: true })
+    const item = { notificationId: 'n1', workspaceId: '/project', sessionFile: session.sessionFile, sessionId: 'wait', unread: true, createdAt: 1788602400000, outcome: 'success', copy: { title: 'Finished task', body: 'The task is complete.' } }
+    let items = [item]
+    mocks.invoke.mockImplementation(async (method: string) => {
+      if (method === 'notifications.inbox') return { items }
+      if (method === 'notifications.markRead') { items = []; return { ok: true } }
+      return { ok: true }
+    })
     render(<NotificationInbox />)
     fireEvent.click(screen.getByRole('button', { name: 'common:notification.inbox' }))
     await screen.findByText('Finished task')
     expect(document.querySelector('time')).toHaveAttribute('datetime', new Date(item.createdAt).toISOString())
-    fireEvent.click(screen.getByRole('button', { name: 'common:notification.markUnread' }))
-    await waitFor(() => expect(mocks.invoke).toHaveBeenCalledWith('notifications.markUnread', { id: 'n1', unread: true }))
+    fireEvent.click(screen.getByRole('button', { name: 'common:notification.markRead' }))
+    await waitFor(() => expect(screen.queryByText('Finished task')).not.toBeInTheDocument())
+    expect(mocks.invoke).toHaveBeenCalledWith('notifications.markRead', { id: 'n1' })
   })
 })

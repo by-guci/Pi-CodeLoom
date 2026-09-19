@@ -1,9 +1,7 @@
 import Store from 'electron-store'
-import type { AsrConfig } from '@shared/asr-types'
 import type { CustomCssOverride, CustomTheme } from '@shared/custom-theme'
 import { DEFAULT_ICON_THEME, type IconTheme } from '@shared/icon-theme'
 import { DEFAULT_TIMELINE_MAX_AUTO_EXPANDED_TOOLS } from '@shared/timeline-settings'
-import { bindSecretStoreBacking } from './secret-store'
 import { nextRecentProjects } from './recent-projects'
 
 export interface StoreSchema {
@@ -33,14 +31,6 @@ export interface StoreSchema {
   language: 'zh' | 'en'
   /** 启动时打开上次项目 */
   autoOpenLastProject: boolean
-  /** 启动时检查 GitHub Releases 是否有新版本 */
-  autoCheckRegistryUpdates: boolean
-  /** 检查更新时包含预发布 */
-  includePrereleaseUpdates: boolean
-  /** 上次自动更新检查时间戳（毫秒）；0 = 从未检查。用于避免每次启动都打 GitHub */
-  lastUpdateCheckAt: number
-  /** 用户选择「忽略本版本」的 semver（无 v 前缀）；空字符串 = 未忽略 */
-  ignoredUpdateVersion: string
   /** 全局：用户提醒是否播放提示音 */
   alertSoundEnabled: boolean
   /** 全局：用户提醒是否使用系统通知 */
@@ -66,13 +56,18 @@ export interface StoreSchema {
   timelineMaxAutoExpandedTools: number
   /** 侧栏会话显示名，键为规范化后的 sessionFile 绝对路径 */
   sessionDisplayNames: Record<string, string>
-  /** 语音输入 ASR 配置 */
-  asrConfig: AsrConfig
   /** Agent 运行时：host = Windows 宿主，wsl = 在 WSL 发行版内运行 */
   agentRuntime: { mode: 'host' | 'wsl'; distro: string | null }
 }
 
-const store = new Store<StoreSchema>({
+const retiredSettingKeys = [
+  'asrConfig', 'codexAccessTokenEnc', 'autoCheckRegistryUpdates',
+  'includePrereleaseUpdates', 'lastUpdateCheckAt', 'ignoredUpdateVersion',
+] as const
+
+type StoredSettings = StoreSchema & Partial<Record<typeof retiredSettingKeys[number], unknown>>
+
+const store = new Store<StoredSettings>({
   name: 'pi-desktop',
   defaults: {
     recentProjects: [],
@@ -99,10 +94,6 @@ const store = new Store<StoreSchema>({
     rightPanelOrder: [],
     language: 'zh',
     autoOpenLastProject: true,
-    autoCheckRegistryUpdates: true,
-    includePrereleaseUpdates: false,
-    lastUpdateCheckAt: 0,
-    ignoredUpdateVersion: '',
     alertSoundEnabled: true,
     alertNotificationEnabled: true,
     alertOnExtensionUi: true,
@@ -118,24 +109,12 @@ const store = new Store<StoreSchema>({
     sessionWorkerIdleTimeoutMinutes: 15,
     timelineMaxAutoExpandedTools: DEFAULT_TIMELINE_MAX_AUTO_EXPANDED_TOOLS,
     sessionDisplayNames: {},
-    asrConfig: {
-      provider: 'codex-asr-builtin',
-      language: 'auto',
-      timeoutMs: 120000,
-      builtinServePort: 18788,
-    } as AsrConfig,
     agentRuntime: { mode: 'host', distro: null },
   },
 })
 
-bindSecretStoreBacking({
-  get: (k) => store.get(k as keyof StoreSchema),
-  set: (k, v) => store.set(k as keyof StoreSchema, v as StoreSchema[keyof StoreSchema]),
-  delete: (k) => {
-    const s = store as { delete?: (key: string) => void }
-    if (typeof s.delete === 'function') s.delete(k)
-  },
-})
+// Remove retired desktop settings without touching the Pi or Codex CLI configuration.
+for (const key of retiredSettingKeys) store.delete(key)
 
 export const configStore = {
   get<K extends keyof StoreSchema>(key: K): StoreSchema[K] {

@@ -86,9 +86,19 @@ export function OverlayScrollbarRail({
   useEffect(() => {
     const el = targetRef.current
     if (!el) return
-    const onScroll = () => update()
+    let frame: number | null = null
+    const onScroll = () => {
+      if (frame != null) return
+      frame = requestAnimationFrame(() => {
+        frame = null
+        update()
+      })
+    }
     el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (frame != null) cancelAnimationFrame(frame)
+    }
   }, [targetRef, update])
 
   useEffect(() => {

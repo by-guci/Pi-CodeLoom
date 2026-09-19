@@ -138,7 +138,7 @@ export const RichInput = forwardRef<HTMLDivElement, RichInputProps>(function Ric
     node.style.height = Math.min(node.scrollHeight, MAX_EDITOR_HEIGHT) + 'px'
     syncRichInputEmpty(node)
     node.scrollTop = Math.min(prevScrollTop, Math.max(node.scrollHeight - node.clientHeight, 0))
-    // Programmatic inserts (Shift+Enter, paste, voice input) skip the browser's caret-into-view
+    // Programmatic inserts (Shift+Enter, paste) skip the browser's caret-into-view
     // scrolling, so bring the caret back into view manually (no-op while content fits).
     scrollCaretIntoView(node, mutationObserverRef.current)
   }

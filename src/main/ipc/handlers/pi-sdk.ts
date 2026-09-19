@@ -1,10 +1,11 @@
 import { BrowserWindow, app } from 'electron'
 import { registerHandler, registerHandlerWithSchema, sendEvent } from '../registry'
-import { piSettingsSetSchema, sdkInstallSchema } from '../schemas'
+import { piSettingsSetSchema, sdkInstallSchema, piModelsLookupSchema } from '../schemas'
 import { workerManager } from '../../worker-manager'
 import { configStore } from '../../config-store'
 import { readPiInfo, readResourceList } from '../../pi-info'
 import { readModelsConfig, writeModelsConfig, fetchRemoteModelIds } from '../../pi-models-json'
+import { lookupModelCapabilities } from '../../models-dev-lookup'
 import { clearGlobalSdkPathCache, readSdkSelection } from '../../sdk-loader'
 import {
   readSdkStatusCached,
@@ -12,6 +13,8 @@ import {
   listRegistryVersionsCached,
   listRegistryVersions,
   installVersion,
+  installGlobalVersion,
+  isInstalling,
   finalizeVersionInstall,
   switchTo,
   isAllowedSdkVersion,
@@ -37,8 +40,9 @@ async function restartWorkers(): Promise<void> {
   await workerManager.start(cwd)
 }
 
-function rejectActiveTurns(): string | null {
-  return workerManager.hasActiveTurns ? '当前有 Agent 正在运行，无法切换 SDK' : null
+function rejectSdkMutation(): string | null {
+  if (isInstalling()) return 'SDK_INSTALL_BUSY'
+  return workerManager.hasActiveTurns ? '当前有 Agent 正在运行，无法更新或切换 SDK' : null
 }
 
 async function verifySelectedSdk(target: 'builtin' | 'global' | 'user') {
@@ -93,13 +97,16 @@ export function registerPiSdkHandlers(): void {
     }),
   )
 
+  registerHandlerWithSchema('ipc:pi.models.lookup', piModelsLookupSchema, async (req) =>
+    lookupModelCapabilities(req.ids),
+  )
   registerHandler('ipc:sdk.status', async (req) => {
     const refresh = req?.refresh === true
     if (refresh) clearGlobalSdkPathCache()
     const cachedStatus = readSdkStatusCached(app.getPath('userData'), { refresh })
-    const status = { ...cachedStatus, active: { ...cachedStatus.active } }
-    status.workerFallback = workerManager.lastSdkFallback
     const runtime = getAgentRuntimeConfig()
+    const status = { ...cachedStatus, active: { ...cachedStatus.active }, runtime }
+    status.workerFallback = workerManager.lastSdkFallback
     if (runtime.mode === 'wsl' && runtime.distro) {
       const wsl = await readWslSdkStatusCached(runtime.distro, { refresh })
       status.globalVersion = wsl.globalVersion
@@ -113,9 +120,34 @@ export function registerPiSdkHandlers(): void {
     return listRegistryVersionsCached({ refresh })
   })
 
+  registerHandlerWithSchema('ipc:sdk.upgradeGlobal', sdkInstallSchema, async (req) => {
+    const blocked = rejectSdkMutation()
+    if (blocked) return { ok: false, error: blocked }
+    const version = String(req.version || '').trim()
+    const registry = await listRegistryVersions()
+    if (!isAllowedSdkVersion(version, registry)) {
+      return { ok: false, error: 'version not in registry list' }
+    }
+    const runtime = getAgentRuntimeConfig()
+    const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0]
+    try {
+      const installed = await installGlobalVersion((line) => {
+        if (win) sendEvent(win, { type: 'sdk-install-progress', version, line })
+      }, runtime.mode === 'wsl' && runtime.distro ? { distro: runtime.distro, version } : { version })
+      if (win) sendEvent(win, { type: 'sdk-install-progress', version: installed.version, done: true })
+      sendSdkRuntimeChanged()
+      // Global files are updated in place; Node's loaded module graph needs an app restart.
+      return { ok: true, version: installed.version, restartRequired: true }
+    } catch (error) {
+      const message = errorMessage(error)
+      if (win) sendEvent(win, { type: 'sdk-install-progress', version, done: true, error: message })
+      return { ok: false, error: message }
+    }
+  })
+
   registerHandlerWithSchema('ipc:sdk.install', sdkInstallSchema, async (req) => {
     const version = String(req.version || '').trim()
-    const activeTurnError = rejectActiveTurns()
+    const activeTurnError = rejectSdkMutation()
     if (activeTurnError) return { ok: false, error: activeTurnError }
     const runtime = getAgentRuntimeConfig()
     if (runtime.mode === 'wsl' && runtime.distro) {
@@ -159,7 +191,7 @@ export function registerPiSdkHandlers(): void {
   registerHandler('ipc:sdk.switch', async (req) => {
     const target: 'builtin' | 'global' | 'user' =
       req?.target === 'global' ? 'global' : req?.target === 'user' ? 'user' : 'builtin'
-    const activeTurnError = rejectActiveTurns()
+    const activeTurnError = rejectSdkMutation()
     if (activeTurnError) return { ok: false, error: activeTurnError }
     const userDataDir = app.getPath('userData')
     const previousSelection = readSdkSelection(userDataDir)

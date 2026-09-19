@@ -36,6 +36,12 @@ export function scrollTimelineToBottom(el: HTMLElement): void {
  */
 const pendingBottomScroll = new WeakMap<HTMLElement, number>()
 
+export function cancelTimelineScrollToBottom(el: HTMLElement): void {
+  const frameId = pendingBottomScroll.get(el)
+  if (frameId != null) cancelAnimationFrame(frameId)
+  pendingBottomScroll.delete(el)
+}
+
 export function scheduleTimelineScrollToBottom(el: HTMLElement): void {
   if (pendingBottomScroll.has(el)) return
   const frameId = requestAnimationFrame(() => {
@@ -44,10 +50,11 @@ export function scheduleTimelineScrollToBottom(el: HTMLElement): void {
     scrollTimelineToBottom(el)
     // One optional settle pass if layout grew after the first write (markdown/code expand).
     if (el.scrollHeight !== heightBefore || el.scrollTop + el.clientHeight < el.scrollHeight - 1) {
-      requestAnimationFrame(() => {
-        if (pendingBottomScroll.has(el)) return
+      const settleFrame = requestAnimationFrame(() => {
+        pendingBottomScroll.delete(el)
         scrollTimelineToBottom(el)
       })
+      pendingBottomScroll.set(el, settleFrame)
     }
   })
   pendingBottomScroll.set(el, frameId)
@@ -128,7 +135,7 @@ export function useTimelineLiveFollow(
   }, [opts.lastTailId, opts.streamingAssistantId, opts.agentRunning, opts.contentEpoch, pinIfFollowing, scrollRef])
 
   // Content height changes (tool expand, markdown layout, stream reflow) while following.
-  // Observe the stable content root once — do NOT recreate ResizeObserver on every token.
+  // Rebind when session content mounts or changes; token growth keeps the observer in place.
   useEffect(() => {
     const content = contentRef.current
     if (!content) return
@@ -140,7 +147,7 @@ export function useTimelineLiveFollow(
     })
     ro.observe(content)
     return () => ro.disconnect()
-  }, [scrollRef, contentRef])
+  }, [scrollRef, contentRef, opts.contentEpoch])
 
   // Keep opts.streamingTailLen in the type for call-site compat; intentionally unused for effects.
   void opts.streamingTailLen

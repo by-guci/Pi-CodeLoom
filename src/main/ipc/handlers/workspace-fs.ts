@@ -29,6 +29,16 @@ function resolveImagePreviewPath(req: { workspaceRoot: string; path: string }):
 }
 
 export function registerWorkspaceFsHandlers(): void {
+  registerHandler('ipc:workspace.fs.stat', async (req) => {
+    const p = String(req?.path || '').trim()
+    if (!p) return { ok: false, error: 'missing_path' }
+    try {
+      const st = statSync(p)
+      return { ok: true, isDirectory: st.isDirectory(), isFile: st.isFile() }
+    } catch {
+      return { ok: false, error: 'not_found' }
+    }
+  })
   registerHandlerWithSchema('ipc:shell.openPath', shellOpenPathSchema, async (req) => {
     const p = String(req.path || '')
     if (!p) return { ok: false }

@@ -10,7 +10,6 @@ export function SettingsSaveBar({ wide = false }: { wide?: boolean }) {
     const ok = await save()
     if (ok) {
       toast.success(t('common:settingsSaved'))
-      window.dispatchEvent(new Event('pi-desktop:asr-config-saved'))
     }
     else toast.error(t('common:saveFailed'))
   }

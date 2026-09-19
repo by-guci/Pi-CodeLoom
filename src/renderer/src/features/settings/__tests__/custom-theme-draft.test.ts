@@ -31,8 +31,6 @@ function draft(): SettingsDraft {
     customCssOverride: { enabled: true, css: ':root { --brand: #ff0000; }' },
     language: 'en',
     autoOpenLastProject: true,
-    autoCheckRegistryUpdates: true,
-    includePrereleaseUpdates: false,
     alertSoundEnabled: true,
     alertNotificationEnabled: true,
     alertOnExtensionUi: true,
@@ -51,12 +49,6 @@ function draft(): SettingsDraft {
     rightPanelCatalog: [],
     rightPanelPrefs: {},
     rightPanelOrder: [],
-    asrConfig: {
-      provider: 'codex-asr-builtin',
-      language: 'auto',
-      timeoutMs: 120000,
-      builtinServePort: 18788,
-    },
     agentRuntime: { mode: 'host', distro: null },
   }
 }
@@ -117,7 +109,7 @@ describe('custom theme settings draft contract', () => {
   })
 
   it('commits the CSS override as one settings value', async () => {
-    invokeMock.mockResolvedValue({ value: draft().asrConfig })
+    invokeMock.mockResolvedValue({})
     const { commitSettingsDraft } = await import('../settings-draft')
     const i18n = { language: 'en', changeLanguage: vi.fn() }
 

@@ -1,6 +1,7 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import './bootstrap-path'
 import { app, shell, BrowserWindow, dialog, session, Menu } from 'electron'
-import { createWindow } from './window'
+import { createWindow, getMainWindow } from './window'
 import { refreshGitWorkspaceWatch } from './git-workspace-watch'
 import { registerAllHandlers } from './ipc'
 import { workerManager } from './worker-manager'
@@ -14,7 +15,7 @@ import {
   initializeCompletionNotifications,
 } from './completion-notification'
 import { notifyForegroundChanged } from './completion-notification-events'
-import { focusCompletionNotificationHost } from './completion-notification-delivery'
+import { disposeCompletionDelivery, focusCompletionNotificationHost } from './completion-notification-delivery'
 import { isCompletionNotificationShortcut } from './completion-notification-shortcut'
 // Prevent EPIPE / write errors from crashing the main process
 process.stdout?.on?.('error', () => {})
@@ -28,7 +29,7 @@ process.on('uncaughtException', (err) => {
     const msg = err instanceof Error ? err.message : String(err)
     const opts = {
       type: 'error' as const,
-      title: 'pi Desktop',
+      title: APP_DISPLAY_NAME,
       message: 'A critical error occurred. Please restart the app.',
       detail: msg.slice(0, 500),
     }
@@ -47,12 +48,16 @@ function attachCompletionNotificationShortcut(win: BrowserWindow): void {
   })
 }
 
+function attachMainWindowLifecycle(win: BrowserWindow): void {
+  win.on('closed', () => disposeCompletionDelivery())
+}
+
 function createMenu(): void {
   // macOS keeps a minimal app menu (system convention); Windows/Linux remove the menu bar entirely.
   if (process.platform === 'darwin') {
     Menu.setApplicationMenu(
       Menu.buildFromTemplate([
-        { role: 'appMenu' },
+        { role: 'appMenu', label: APP_DISPLAY_NAME },
         { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
         { role: 'window', submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'front' }] },
         { role: 'help', submenu: [{ label: 'Documentation', click: () => shell.openExternal('https://pi.dev') }] },
@@ -68,10 +73,13 @@ if (!gotLock) {
   app.quit()
 } else {
   app.on('second-instance', () => {
-    const win = BrowserWindow.getAllWindows()[0]
-    if (win) {
+    const win = getMainWindow()
+    if (win && !win.isDestroyed()) {
       if (win.isMinimized()) win.restore()
+      if (!win.isVisible()) win.show()
       win.focus()
+    } else {
+      app.emit('activate')
     }
   })
 }
@@ -111,6 +119,7 @@ app.whenReady().then(() => {
   })
   const win = createWindow()
   workerManager.setMainWindow(win)
+  attachMainWindowLifecycle(win)
   attachCompletionNotificationShortcut(win)
   win.on('focus', () => notifyForegroundChanged())
   win.on('restore', () => notifyForegroundChanged())
@@ -120,31 +129,33 @@ app.whenReady().then(() => {
   setImmediate(() => {
     void import('./ipc/sdk-session').then(({ warmSdkModules }) => warmSdkModules(app.getPath('userData')))
   })
-  if (process.env.PI_E2E !== '1' && process.env.PI_E2E !== 'true') {
-    win.once('show', () => {
-      setTimeout(() => {
-        import('./updater').then(({ initUpdater }) => initUpdater(win)).catch((e) => {
-          console.warn('[Updater] Failed to initialize:', e)
-        })
-      }, 3000)
-    })
-  }
-
   // 不自动打开上次项目：进 app 显示空 Project Home，用户自行选择项目
 
   app.on('activate', () => {
-    const windows = BrowserWindow.getAllWindows()
-    if (windows.length === 0) {
+    const existing = getMainWindow()
+    if (existing && !existing.isDestroyed()) {
+      if (!existing.isVisible()) existing.show()
+      existing.focus()
+      return
+    }
+    const reopen = () => {
+      if (getMainWindow()) return
+      initializeCompletionNotifications()
       const w = createWindow()
       workerManager.setMainWindow(w)
+      attachMainWindowLifecycle(w)
       attachCompletionNotificationShortcut(w)
       w.on('focus', () => notifyForegroundChanged())
       w.on('restore', () => notifyForegroundChanged())
+      w.focus()
     }
+    if (gracefulShutdownPromise) void gracefulShutdownPromise.then(reopen)
+    else reopen()
   })
 })
 
 let isQuittingGracefully = false
+let gracefulShutdownPromise: Promise<void> | null = null
 
 /**
  * Force-quit mid-stream used to kill workers before abort could write a terminal
@@ -152,22 +163,22 @@ let isQuittingGracefully = false
  * Await abort+dispose flush on every quit path.
  */
 async function gracefulShutdownWorkers(): Promise<void> {
+  if (gracefulShutdownPromise) return gracefulShutdownPromise
   if (isQuittingGracefully) return
   isQuittingGracefully = true
-  try {
-    await workerManager.stop()
-  } catch (error) {
-    console.error('[Main] graceful worker stop failed:', error)
-  } finally {
-    sessionPreviewProcess.stop()
-    disposeCompletionNotifications()
-  }
-  try {
-    const asr = await import('./asr/codex-asr-manager')
-    asr.stopBuiltinCodexAsrServe()
-  } catch {
-    /* optional */
-  }
+  gracefulShutdownPromise = (async () => {
+    try {
+      await workerManager.stop()
+    } catch (error) {
+      console.error('[Main] graceful worker stop failed:', error)
+    } finally {
+      sessionPreviewProcess.stop()
+      disposeCompletionNotifications()
+    }
+  })()
+  await gracefulShutdownPromise
+  gracefulShutdownPromise = null
+  if (process.platform === 'darwin') isQuittingGracefully = false
 }
 
 app.on('before-quit', (event) => {

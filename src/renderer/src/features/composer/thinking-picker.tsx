@@ -14,6 +14,8 @@ const LEVELS: { key: string; label: string; desc: string }[] = [
   { key: 'medium', label: 'Medium', desc: '中等思考（默认）' },
   { key: 'high', label: 'High', desc: '深度思考' },
   { key: 'xhigh', label: 'XHigh', desc: '极致思考（耗时/token 多）' },
+  { key: 'max', label: 'Max', desc: '最大思考（更长推理）' },
+  { key: 'ultra', label: 'Ultra', desc: '超限思考（最耗时/token）' },
 ]
 
 export function ThinkingPicker() {

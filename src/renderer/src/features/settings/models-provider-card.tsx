@@ -39,6 +39,7 @@ export function ModelsProviderCard({
   onRemoveProvider,
   onAddModel,
   onAddAllNew,
+  onFillModel,
   onUpdateModel,
   onRemoveModel,
 }: {
@@ -61,6 +62,7 @@ export function ModelsProviderCard({
   onRemoveProvider: () => void
   onAddModel: (id: string) => void
   onAddAllNew: () => void
+  onFillModel?: (id: string) => void
   onUpdateModel: (modelId: string, patch: Partial<LocalModelEntry>) => void
   onRemoveModel: (modelId: string) => void
 }) {
@@ -233,6 +235,7 @@ export function ModelsProviderCard({
                         expanded={expandedLocalModel[rowKey] === true}
                         onToggleExpand={() => onToggleLocalModel(rowKey)}
                         onChange={(patch) => onUpdateModel(m.id, patch)}
+                        onFill={onFillModel ? () => onFillModel(m.id) : undefined}
                         onRemove={() => onRemoveModel(m.id)}
                       />
                     )

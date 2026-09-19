@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "pi Desktop",
+    "name": "Pi-CodeLoom",
     "status": {
       "idle": "空闲",
       "ready": "就绪",
@@ -59,7 +59,9 @@
     "clearSearch": "清除搜索",
     "continue": "继续",
     "copySessionPath": "复制会话路径",
-    "openLog": "打开日志"
+    "openLog": "打开日志",
+    "dropFolderToAdd": "拖入文件夹，添加为新项目并新开对话",
+    "dropFolderOnly": "只能拖入文件夹作为新项目"
   },
   "attention": {
     "needsYou": "等你",
@@ -180,8 +182,7 @@
     "openFailed": "无法打开该会话",
     "inbox": "通知",
     "empty": "没有通知",
-    "markUnread": "标为未读",
-    "markRead": "标为已读",
+    "markRead": "已知",
     "unreadCount": "{{count}} 条待查看",
     "continueAnswer": "打开会话，继续作答",
     "history": "最近完成",

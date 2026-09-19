@@ -20,7 +20,7 @@ export function MainColumnWithTimelineScroll({
       const t = e.target as HTMLElement
       if (
         t.closest(
-          'textarea, input, [data-composer-root], [data-slash-popover], [data-independent-scroll]',
+          'textarea, input, [data-composer-root], [data-slash-popover], [data-independent-scroll], .timeline-scroll-viewport .overlay-scroll-pane',
         )
       ) {
         return

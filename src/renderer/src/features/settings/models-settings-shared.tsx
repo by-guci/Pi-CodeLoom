@@ -45,13 +45,25 @@ export function ProviderAvatar({ preset, label }: { preset?: ProviderPreset; lab
 }
 
 export function defaultModelEntry(id: string): LocalModelEntry {
-  const guessReasoning = /^(o\d|gpt-5|claude-opus|deepseek-reasoner|think)/i.test(id)
-  const guessVision = /(vision|gpt-4o|gemini|claude-3|image)/i.test(id)
-  return {
-    id,
-    name: id,
-    reasoning: guessReasoning || undefined,
-    input: guessVision ? ['text', 'image'] : ['text'],
-    ...(guessReasoning ? { thinkingLevelMap: { xhigh: 'xhigh', max: 'max' } } : {}),
+  return { id, name: id, input: ['text'] }
+}
+
+export function applyLookupSpec(entry: LocalModelEntry, spec: {
+  name?: string
+  reasoning?: boolean
+  input?: ('text' | 'image')[]
+  contextWindow?: number
+  maxTokens?: number
+}): LocalModelEntry {
+  const next: LocalModelEntry = {
+    ...entry,
+    input: spec.input?.length ? spec.input : entry.input || ['text'],
+    reasoning: spec.reasoning || undefined,
+    contextWindow: spec.contextWindow ?? entry.contextWindow,
+    maxTokens: spec.maxTokens ?? entry.maxTokens,
   }
+  if (spec.name && (!entry.name || entry.name === entry.id)) next.name = spec.name
+  if (spec.reasoning && !entry.thinkingLevelMap) next.thinkingLevelMap = { high: 'high' }
+  if (!spec.reasoning) next.thinkingLevelMap = undefined
+  return next
 }

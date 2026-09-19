@@ -2,7 +2,6 @@ import type { i18n as I18n } from 'i18next'
 import { ipcClient } from '@renderer/lib/ipc-client'
 import { applyIconTheme } from '@renderer/components/icons'
 import { useUIStore } from '@renderer/stores/ui-store'
-import type { AsrConfig } from '@shared/asr-types'
 import { normalizeIconTheme, type IconTheme } from '@shared/icon-theme'
 import {
   type CustomCssOverride,
@@ -40,8 +39,6 @@ export type SettingsDraft = {
   customCssOverride: CustomCssOverride
   language: LanguageChoice
   autoOpenLastProject: boolean
-  autoCheckRegistryUpdates: boolean
-  includePrereleaseUpdates: boolean
   alertSoundEnabled: boolean
   alertNotificationEnabled: boolean
   alertOnExtensionUi: boolean
@@ -60,7 +57,6 @@ export type SettingsDraft = {
   rightPanelCatalog: RightPanelCatalogItem[]
   rightPanelPrefs: RightPanelPrefs
   rightPanelOrder: string[]
-  asrConfig: AsrConfig
   agentRuntime: AgentRuntimeChoice
 }
 
@@ -69,30 +65,6 @@ function normalizeLanguage(raw: unknown, fallback: LanguageChoice): LanguageChoi
   if (s.startsWith('zh')) return 'zh'
   if (s.startsWith('en')) return 'en'
   return fallback
-}
-
-function normalizeAsrForSignature(cfg: AsrConfig): AsrConfig {
-  const token = cfg.codexAccessToken?.trim()
-  return {
-    ...cfg,
-    codexAccessToken: token || undefined,
-    codexAuthFile: cfg.codexAuthFile?.trim() || undefined,
-    cliBinaryPath: cfg.cliBinaryPath?.trim() || undefined,
-    serverUrl: cfg.serverUrl?.trim() || undefined,
-    apiKey: cfg.apiKey?.trim() || undefined,
-    codexAccessTokenSet: cfg.codexAccessTokenSet,
-    codexAccessTokenPreview: cfg.codexAccessTokenPreview,
-    codexAccessTokenPreserved: cfg.codexAccessTokenPreserved,
-  }
-}
-
-export function asrConfigFromSettingsResponse(raw: AsrConfig): AsrConfig {
-  const a = raw || { provider: 'codex-asr-builtin' as const, language: 'auto' as const, timeoutMs: 120000, builtinServePort: 18788 }
-  const base = a.provider === 'none' ? { ...a, provider: 'codex-asr-builtin' as const } : a
-  return normalizeAsrForSignature({
-    ...base,
-    codexAccessToken: base.codexAccessToken?.trim() || undefined,
-  })
 }
 
 export function normalizeAgentRuntime(raw: unknown): AgentRuntimeChoice {
@@ -112,8 +84,6 @@ export function draftSignature(d: SettingsDraft): string {
     customCssOverride: d.customCssOverride,
     language: d.language,
     autoOpenLastProject: d.autoOpenLastProject,
-    autoCheckRegistryUpdates: d.autoCheckRegistryUpdates,
-    includePrereleaseUpdates: d.includePrereleaseUpdates,
     alertSoundEnabled: d.alertSoundEnabled,
     alertNotificationEnabled: d.alertNotificationEnabled,
     alertOnExtensionUi: d.alertOnExtensionUi,
@@ -131,7 +101,6 @@ export function draftSignature(d: SettingsDraft): string {
     extensionOverrides: d.extensionOverrides,
     rightPanelPrefs: d.rightPanelPrefs,
     rightPanelOrder: d.rightPanelOrder,
-    asrConfig: normalizeAsrForSignature(d.asrConfig),
     agentRuntime: d.agentRuntime,
   })
 }
@@ -153,8 +122,6 @@ export async function loadSettingsDraftFromDisk(i18nLanguage: string): Promise<S
     customCssOverride: normalizeCustomCssOverride(s.customCssOverride),
     language: normalizeLanguage(s.language, normalizeLanguage(i18nLanguage, 'zh')),
     autoOpenLastProject: s.autoOpenLastProject !== false,
-    autoCheckRegistryUpdates: s.autoCheckRegistryUpdates !== false,
-    includePrereleaseUpdates: s.includePrereleaseUpdates === true,
     alertSoundEnabled: s.alertSoundEnabled !== false,
     alertNotificationEnabled: s.alertNotificationEnabled !== false,
     alertOnExtensionUi: s.alertOnExtensionUi !== false,
@@ -173,7 +140,6 @@ export async function loadSettingsDraftFromDisk(i18nLanguage: string): Promise<S
     rightPanelCatalog: cat,
     rightPanelPrefs: prefs,
     rightPanelOrder: order,
-    asrConfig: asrConfigFromSettingsResponse((s.asrConfig || {}) as AsrConfig),
     agentRuntime: normalizeAgentRuntime(s.agentRuntime),
   }
 }
@@ -259,7 +225,7 @@ export function previewDraftUi(draft: SettingsDraft, i18n: I18n): void {
   if (i18n.language !== draft.language) void i18n.changeLanguage(draft.language)
 }
 
-export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Promise<AsrConfig> {
+export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Promise<void> {
   await ipcClient.invoke('settings.set', { key: 'theme', value: draft.theme })
   await ipcClient.invoke('settings.set', { key: 'iconTheme', value: draft.iconTheme })
   await ipcClient.invoke('settings.set', {
@@ -269,8 +235,6 @@ export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Pro
   await ipcClient.invoke('settings.set', { key: 'customCssOverride', value: draft.customCssOverride })
   await ipcClient.invoke('settings.set', { key: 'language', value: draft.language })
   await ipcClient.invoke('settings.set', { key: 'autoOpenLastProject', value: draft.autoOpenLastProject })
-  await ipcClient.invoke('settings.set', { key: 'autoCheckRegistryUpdates', value: draft.autoCheckRegistryUpdates })
-  await ipcClient.invoke('settings.set', { key: 'includePrereleaseUpdates', value: draft.includePrereleaseUpdates })
   await ipcClient.invoke('settings.set', { key: 'alertSoundEnabled', value: draft.alertSoundEnabled })
   await ipcClient.invoke('settings.set', { key: 'alertNotificationEnabled', value: draft.alertNotificationEnabled })
   await ipcClient.invoke('settings.set', { key: 'alertOnExtensionUi', value: draft.alertOnExtensionUi })
@@ -318,10 +282,6 @@ export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Pro
     order: draft.rightPanelOrder,
   })
 
-  const asrRes = await ipcClient.invoke('settings.set', { key: 'asrConfig', value: draft.asrConfig })
-  const savedAsr = asrConfigFromSettingsResponse((asrRes?.value || draft.asrConfig) as AsrConfig)
-  draft.asrConfig = savedAsr
-
   await ipcClient.invoke('settings.set', { key: 'agentRuntime', value: draft.agentRuntime })
 
   useUIStore.getState().setTheme(draft.theme)
@@ -336,5 +296,4 @@ export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Pro
     draft.rightPanelPrefs,
     draft.rightPanelOrder,
   )
-  return savedAsr
 }

@@ -218,7 +218,7 @@ export function createCompletionNotificationController(deps: CompletionControlle
   }
 
   function listInbox(): CompletionCard[] {
-    return inbox.map((card) => ({ ...card }))
+    return inbox.filter((card) => card.unread).map((card) => ({ ...card }))
   }
 
   function markInboxUnread(notificationId: string, unread: boolean): void {
@@ -227,7 +227,8 @@ export function createCompletionNotificationController(deps: CompletionControlle
   }
 
   function markInboxRead(notificationId: string): void {
-    markInboxUnread(notificationId, false)
+    const i = inbox.findIndex((row) => row.notificationId === notificationId)
+    if (i >= 0) inbox.splice(i, 1)
   }
 
   function dispose(): void {

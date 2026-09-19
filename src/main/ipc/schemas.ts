@@ -147,6 +147,9 @@ export const sdkInstallSchema = z.object({
   version: z.string().min(1),
 })
 
+export const piModelsLookupSchema = z.object({
+  ids: z.array(z.string().trim().min(1).max(256)).min(1).max(50),
+})
 const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
 const fontNameSchema = z
   .string()
@@ -181,9 +184,6 @@ const settingsValueSchemas: Record<string, z.ZodTypeAny> = {
   recentProjects: z.array(z.string()),
   recentProjectsFixedOrder: z.boolean(),
   autoOpenLastProject: z.boolean(),
-  autoCheckRegistryUpdates: z.boolean(),
-  includePrereleaseUpdates: z.boolean(),
-  ignoredUpdateVersion: z.string(),
   alertSoundEnabled: z.boolean(),
   alertNotificationEnabled: z.boolean(),
   alertOnExtensionUi: z.boolean(),
@@ -211,7 +211,6 @@ const settingsValueSchemas: Record<string, z.ZodTypeAny> = {
   windowBounds: z
     .object({ width: z.number(), height: z.number(), x: z.number().optional(), y: z.number().optional() })
     .nullable(),
-  asrConfig: z.record(z.unknown()),
   agentRuntime: z
     .object({
       mode: z.enum(['host', 'wsl']),

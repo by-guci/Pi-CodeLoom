@@ -8,7 +8,6 @@ const root = process.cwd()
 const checklist = [
   ['F-01', 'scripts/ci-audit.mjs'],
   ['F-02', 'scripts/tests/ipc-capability-boundaries.test.mjs'],
-  ['F-03', 'scripts/tests/asr-secret-redaction.test.mjs'],
   ['F-04', 'scripts/tests/ipc-schema-validation.test.mjs'],
   ['F-05', 'scripts/tests/ipc-capability-boundaries.test.mjs'],
   ['F-06', 'scripts/tests/ipc-capability-boundaries.test.mjs'],
@@ -21,7 +20,6 @@ const checklist = [
   ['F-13', 'scripts/ci-audit.mjs'],
   ['F-14', 'scripts/tests/ui-store-persist-boundary.test.mjs'],
   ['H-01', 'scripts/tests/release-job-checkout.test.mjs'],
-  ['M-01', 'scripts/tests/asr-overlay-lifecycle.test.mjs'],
   ['M-02', 'scripts/tests/clipboard-retention-policy.test.mjs'],
   ['M-03', 'scripts/tests/ipc-capability-boundaries.test.mjs'],
 ]

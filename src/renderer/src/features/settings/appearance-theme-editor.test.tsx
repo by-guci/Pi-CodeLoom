@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CustomCssOverride, CustomTheme } from '@shared/custom-theme'
 import type { SettingsDraft } from './settings-draft'
 import { AppearanceThemeEditor } from './appearance-theme-editor'
+import { AppearanceThemePresets } from './appearance-theme-presets'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -41,8 +42,6 @@ function baseDraft(): SettingsDraft {
     customCssOverride: { enabled: false, css: '' },
     language: 'en',
     autoOpenLastProject: true,
-    autoCheckRegistryUpdates: true,
-    includePrereleaseUpdates: false,
     alertSoundEnabled: true,
     alertNotificationEnabled: true,
     alertOnExtensionUi: true,
@@ -61,12 +60,6 @@ function baseDraft(): SettingsDraft {
     rightPanelCatalog: [],
     rightPanelPrefs: {},
     rightPanelOrder: [],
-    asrConfig: {
-      provider: 'codex-asr-builtin',
-      language: 'auto',
-      timeoutMs: 120000,
-      builtinServePort: 18788,
-    },
     agentRuntime: { mode: 'host', distro: null },
   }
 }
@@ -79,44 +72,40 @@ function Harness() {
     setCustomCssOverride: (customCssOverride) =>
       setDraft((value) => ({ ...value, customCssOverride })),
   }
-  return <AppearanceThemeEditor />
+  return <><AppearanceThemePresets /><AppearanceThemeEditor /></>
 }
 
 function lightSection(): HTMLElement {
-  return screen.getByRole('heading', { name: 'variantLight' }).closest('section') as HTMLElement
-}
-
-function darkSection(): HTMLElement {
-  return screen.getByRole('heading', { name: 'variantDark' }).closest('section') as HTMLElement
+  return screen.getByRole('heading', { name: 'colorDetails' }).closest('section') as HTMLElement
 }
 
 async function chooseLightPreset(user: ReturnType<typeof userEvent.setup>) {
-  const select = within(lightSection()).getByRole('combobox', { name: 'preset' })
-  await user.selectOptions(select, 'vscode-plus')
+  await user.click(screen.getByRole('button', { name: 'palettes.clay-hearth.name' }))
+  await user.click(screen.getByRole('button', { name: 'customize' }))
+  await user.click(screen.getByRole('button', { name: 'themeLight' }))
 }
 
 afterEach(() => cleanup())
 
 describe('AppearanceThemeEditor', () => {
-  it('fills a slot from a preset, marks manual edits custom, and restores default', async () => {
+  it('sets both variants together, marks manual edits custom, and restores default', async () => {
     const user = userEvent.setup()
     render(<Harness />)
 
     await chooseLightPreset(user)
     expect(currentDraft.customTheme.light).toMatchObject({
-      preset: 'vscode-plus',
-      accent: '#007acc',
-      surface: '#ffffff',
-      ink: '#000000',
-      contrast: 45,
-      diffAdded: '#008000',
-      diffRemoved: '#ee0000',
+      preset: 'clay-hearth',
+      accent: '#a44c2f',
+      surface: '#faf9f5',
     })
+    expect(currentDraft.customTheme.dark?.preset).toBe('clay-hearth')
+    expect(screen.getByRole('button', { name: 'palettes.clay-hearth.name' })).toHaveAttribute('aria-pressed', 'true')
 
     fireEvent.change(within(lightSection()).getByRole('slider', { name: 'contrast' }), {
       target: { value: '52' },
     })
     expect(currentDraft.customTheme.light).toMatchObject({ preset: null, contrast: 52 })
+    expect(screen.getByRole('button', { name: 'palettes.clay-hearth.name' })).toHaveAttribute('aria-pressed', 'false')
 
     await user.click(within(lightSection()).getByRole('button', { name: 'restoreDefault' }))
     expect(currentDraft.customTheme.light).toBeUndefined()
@@ -126,6 +115,7 @@ describe('AppearanceThemeEditor', () => {
     const user = userEvent.setup()
     render(<Harness />)
 
+    await user.click(screen.getByRole('button', { name: 'customize' }))
     await user.click(within(lightSection()).getByRole('button', { name: 'importTheme' }))
     const dialog = screen.getByRole('dialog')
     const textarea = within(dialog).getByRole('textbox', { name: 'importValueLabel' })
@@ -166,18 +156,43 @@ describe('AppearanceThemeEditor', () => {
     })
   })
 
-  it('limits built-in presets to their matching variant and normalizes fonts on commit', async () => {
+  it('keeps the old light/dark blocks collapsed and normalizes fonts on commit', async () => {
     const user = userEvent.setup()
     render(<Harness />)
 
-    expect(within(lightSection()).queryByRole('option', { name: 'presetCodex' })).not.toBeInTheDocument()
-    expect(within(darkSection()).queryByRole('option', { name: 'presetVscodePlus' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'variantLight' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'variantDark' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'fontUi' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'builtinPalettes' })).getAllByRole('button')).toHaveLength(16)
 
     await chooseLightPreset(user)
     const fontInput = within(lightSection()).getByRole('textbox', { name: 'fontUi' })
     await user.type(fontInput, "Bad';  Font")
     await user.tab()
     expect(currentDraft.customTheme.light?.fontUi).toBe('Bad Font')
+  })
+
+  it('replaces both variants when changing palettes and exposes extra color pickers', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    await chooseLightPreset(user)
+    expect(currentDraft.customTheme.light).toMatchObject({
+      preset: 'clay-hearth',
+      accent: '#a44c2f',
+      surface: '#faf9f5',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'palettes.mosswood.name' }))
+    expect(currentDraft.customTheme.light?.preset).toBe('mosswood')
+    expect(currentDraft.customTheme.dark?.preset).toBe('mosswood')
+    expect(currentDraft.theme).toBe('system')
+
+    fireEvent.change(within(lightSection()).getByRole('textbox', { name: 'diffAddedHex' }), {
+      target: { value: '#112233' },
+    })
+    fireEvent.blur(within(lightSection()).getByRole('textbox', { name: 'diffAddedHex' }))
+    expect(currentDraft.customTheme.light).toMatchObject({ preset: null, diffAdded: '#112233' })
   })
 
   it('enables, preserves, and clears the advanced CSS draft', async () => {
@@ -198,8 +213,20 @@ describe('AppearanceThemeEditor', () => {
     expect(currentDraft.customCssOverride).toEqual({ enabled: false, css: '' })
   })
 
-  it('keeps the copy action disabled while a slot uses the real Pi default', () => {
+  it('keeps the copy action disabled while a slot uses the real Pi default', async () => {
+    const user = userEvent.setup()
     render(<Harness />)
-    expect(within(darkSection()).getByRole('button', { name: 'copyTheme' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'customize' }))
+    expect(within(lightSection()).getByRole('button', { name: 'copyTheme' })).toBeDisabled()
+  })
+
+  it('restores both variants without changing the display mode or custom CSS', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    await user.click(screen.getByRole('button', { name: 'palettes.nord.name' }))
+    await user.click(screen.getByRole('button', { name: 'resetPalette' }))
+    expect(currentDraft.customTheme).toEqual({})
+    expect(currentDraft.theme).toBe('system')
+    expect(currentDraft.customCssOverride).toEqual({ enabled: false, css: '' })
   })
 })

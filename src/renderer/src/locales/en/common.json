@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "pi Desktop",
+    "name": "Pi-CodeLoom",
     "status": {
       "idle": "Idle",
       "ready": "Ready",
@@ -59,7 +59,9 @@
     "clearSearch": "Clear search",
     "continue": "Continue",
     "copySessionPath": "Copy session path",
-    "openLog": "Open log"
+    "openLog": "Open log",
+    "dropFolderToAdd": "Drop a folder to add it as a project and start a conversation",
+    "dropFolderOnly": "Only folders can be added as projects"
   },
   "attention": {
     "needsYou": "Needs you",
@@ -180,8 +182,7 @@
     "openFailed": "Could not open that session",
     "inbox": "Notifications",
     "empty": "No notifications",
-    "markUnread": "Mark unread",
-    "markRead": "Mark read",
+    "markRead": "Known",
     "unreadCount": "{{count}} to review",
     "continueAnswer": "Open conversation to respond",
     "history": "Recently completed",

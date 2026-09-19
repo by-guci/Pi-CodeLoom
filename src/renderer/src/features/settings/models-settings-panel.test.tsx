@@ -89,6 +89,23 @@ afterEach(() => {
 })
 
 describe('ModelsSettingsPanel save', () => {
+  it('preserves unsaved provider edits when the SDK catalog refreshes', async () => {
+    vi.mocked(ipcClient.invoke).mockImplementation(async (method: string) => {
+      if (method === 'pi.models.get') return { path: 'models.json', config: initialConfig }
+      if (method === 'model.list') return { models: availableModels }
+      return {}
+    })
+    render(<ModelsSettingsPanel />)
+    fireEvent.click(await screen.findByRole('button', { name: 'edit provider' }))
+
+    await act(async () => {
+      for (const listener of appEventListeners) listener({ type: 'sdk-runtime-changed' })
+    })
+
+    expect(screen.getByText('Changed provider')).toBeInTheDocument()
+    expect(getDirtySettingsSlices().some((slice) => slice.id === 'pi-models')).toBe(true)
+  })
+
   it('separates editable user providers from the active Pi SDK catalog', async () => {
     vi.mocked(ipcClient.invoke)
       .mockResolvedValueOnce({ path: 'models.json', config: initialConfig })

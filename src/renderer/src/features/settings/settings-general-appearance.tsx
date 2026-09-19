@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@renderer/lib/utils'
 import { ipcClient } from '@renderer/lib/ipc-client'
-import { showAppUpdateDialog } from '@renderer/lib/app-update-notify'
 
 import { useSettingsDraft } from '@renderer/features/settings/settings-draft-context'
 import { PiSettingsPanel } from '@renderer/features/settings/pi-settings-panel'
 import { AppearanceThemeEditor } from '@renderer/features/settings/appearance-theme-editor'
+import { AppearanceThemePresets } from '@renderer/features/settings/appearance-theme-presets'
 import { RuntimeSettingsPanel } from '@renderer/features/settings/runtime-settings-panel'
 import { SettingsPageHeader } from '@renderer/features/settings/settings-shell'
 import { SettingRow, SettingsSection } from '@renderer/features/settings/settings-page-shared'
@@ -84,8 +84,6 @@ export function GeneralSettings() {
   const {
     draft,
     setAutoOpenLastProject,
-    setAutoCheckRegistryUpdates,
-    setIncludePrereleaseUpdates,
     setLanguage,
     setAlertSoundEnabled,
     setAlertNotificationEnabled,
@@ -103,22 +101,9 @@ export function GeneralSettings() {
   } = useSettingsDraft()
   const [recentProjects, setRecentProjects] = useState<string[]>([])
   const [fixedOrder, setFixedOrder] = useState(false)
-  const [updateCheck, setUpdateCheck] = useState<string | null>(null)
-  const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [testingAlert, setTestingAlert] = useState(false)
   const [alertTestFeedback, setAlertTestFeedback] = useState<'sent' | 'failed' | null>(null)
-  const updateCheckAttemptRef = useRef(0)
-  const mountedRef = useRef(true)
-
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
-      updateCheckAttemptRef.current += 1
-    }
-  }, [])
-
   useEffect(() => {
     ipcClient.invoke('settings.get', { key: 'recentProjects' }).then((res) => {
       if (res?.settings?.recentProjects) setRecentProjects(res.settings.recentProjects)
@@ -136,36 +121,6 @@ export function GeneralSettings() {
       // 通知侧栏立即按新顺序重排
       window.dispatchEvent(new CustomEvent('pi-desktop:settings-changed', { detail: { key: 'recentProjectsFixedOrder' } }))
     })
-  }
-
-  const handleCheckUpdate = async () => {
-    const attempt = ++updateCheckAttemptRef.current
-    setCheckingUpdate(true)
-    setUpdateCheck(null)
-
-    try {
-      const result = await ipcClient.invoke('app.checkUpdate', {})
-      if (!mountedRef.current || attempt !== updateCheckAttemptRef.current) return
-
-      if (result.status === 'available') {
-        setUpdateCheck(
-          t('settings:general.updateHasNew', {
-            version: result.update.latestVersion,
-            current: result.update.currentVersion,
-          }),
-        )
-        showAppUpdateDialog(result.update)
-      } else if (result.status === 'up-to-date') {
-        setUpdateCheck(t('settings:general.updateLatest', { version: result.latestVersion }))
-      } else {
-        setUpdateCheck(t('settings:general.updateCheckFailed'))
-      }
-      setCheckingUpdate(false)
-    } catch {
-      if (!mountedRef.current || attempt !== updateCheckAttemptRef.current) return
-      setUpdateCheck(t('settings:general.updateCheckFailed'))
-      setCheckingUpdate(false)
-    }
   }
 
   const handleTestAlert = async () => {
@@ -189,45 +144,7 @@ export function GeneralSettings() {
         <SettingRow label={t('settings:general.openLastProject')} description={t('settings:general.openLastProjectDesc')}>
           <Switch checked={draft.autoOpenLastProject} onCheckedChange={setAutoOpenLastProject} />
         </SettingRow>
-        <SettingRow
-          label={t('settings:general.autoCheckUpdate')}
-          description={t('settings:general.autoCheckUpdateDesc')}
-        >
-          <Switch checked={draft.autoCheckRegistryUpdates} onCheckedChange={setAutoCheckRegistryUpdates} />
-        </SettingRow>
-        <SettingRow
-          label={t('settings:general.prerelease')}
-          description={t('settings:general.prereleaseDesc')}
-        >
-          <Switch checked={draft.includePrereleaseUpdates} onCheckedChange={setIncludePrereleaseUpdates} />
-        </SettingRow>
-        <SettingRow label={t('settings:general.appVersion')} description={t('settings:general.appVersionDesc')}>
-          <div className="flex flex-col items-start gap-1 sm:items-end">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-busy={checkingUpdate}
-                onClick={() => void handleCheckUpdate()}
-                className={btnOutline}
-              >
-                {checkingUpdate ? t('settings:general.checking') : t('settings:general.checkUpdate')}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void ipcClient.invoke('app.openRelease', { url: 'https://github.com/justhil/pi-app' })
-                }
-                className={btnOutline}
-                title={t('settings:general.openGitHub')}
-              >
-                {t('settings:general.openGitHub')}
-              </button>
-            </div>
-            {updateCheck && (
-              <span className="max-w-[220px] text-xs text-muted-foreground/70 sm:text-right">{updateCheck}</span>
-            )}
-          </div>
-        </SettingRow>
+        <p className="px-1 text-xs text-muted-foreground">{t('settings:general.localMaintenance')}</p>
       </SettingsSection>
 
       <SettingsSection
@@ -516,8 +433,8 @@ export function AppearanceSettings() {
     <div className="flex flex-col gap-8">
       <SettingsPageHeader title={t('settings:appearance.title')} description={t('settings:appearance.description')} />
 
-      <SettingsSection title={t('settings:appearance.themeTitle')}>
-        <SettingRow label={t('settings:appearance.themeLabel')} description={t('settings:appearance.themeDesc')}>
+      <SettingsSection title={t('settings:appearance.themeLabel')}>
+        <SettingRow label={t('settings:appearance.colorMode')} description={t('settings:appearance.themeDesc')}>
           <div className="flex flex-wrap gap-1.5">
             {themes.map(({ key, icon: Icon }) => (
               <button
@@ -538,7 +455,10 @@ export function AppearanceSettings() {
             ))}
           </div>
         </SettingRow>
+        <AppearanceThemePresets />
       </SettingsSection>
+
+      <AppearanceThemeEditor />
 
       <SettingsSection title={t('settings:appearance.iconThemeTitle')}>
         <SettingRow
@@ -594,8 +514,6 @@ export function AppearanceSettings() {
           </div>
         </SettingRow>
       </SettingsSection>
-
-      <AppearanceThemeEditor />
 
       <SettingsSection title={t('settings:appearance.timeline')}>
         <SettingRow

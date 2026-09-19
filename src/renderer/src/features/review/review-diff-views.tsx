@@ -221,7 +221,9 @@ export function FileDiffView({
   defaultOpen: boolean
   onMutated: () => void
 }) {
+  const { t } = useTranslation('common')
   const [open, setOpen] = useState(defaultOpen)
+  const [stageError, setStageError] = useState<string | null>(null)
   const filePath = file?.path ?? fallbackPath
   const staged = group === 'staged'
 
@@ -229,6 +231,7 @@ export function FileDiffView({
     (_hunkIdx: number, hunk: DiffHunk) => {
       const patch = hunk.patch || ''
       if (!patch) return
+      setStageError(null)
       ipcClient
         .invoke(staged ? 'review.unstageHunks' : 'review.stageHunks', {
           cwd,
@@ -236,10 +239,11 @@ export function FileDiffView({
         })
         .then((res) => {
           if (res?.ok) onMutated()
+          else setStageError(res?.error || t('operationFailed'))
         })
-        .catch(() => {})
+        .catch((error) => setStageError(String(error)))
     },
-    [staged, filePath, cwd, onMutated],
+    [staged, filePath, cwd, onMutated, t],
   )
 
   return (
@@ -288,6 +292,7 @@ export function FileDiffView({
           <FolderOpen className="h-3 w-3" />
         </button>
       </div>
+      {stageError && <div role="alert" className="px-3 py-2 text-xs text-destructive">{stageError}</div>}
       {open && (
         <div className="min-w-0 overflow-hidden border-t border-border/30 bg-[var(--bg-2)]">
           {file?.large && (

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, ChevronDown, ChevronRight, Clipboard, Copy, RotateCcw, X } from '@renderer/components/icons'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +9,6 @@ import {
   btnOutline,
   btnPrimary,
   inputCls,
-  selectCls,
   textareaCls,
 } from '@renderer/features/settings/settings-controls'
 import { SettingRow, SettingsSection } from '@renderer/features/settings/settings-page-shared'
@@ -23,35 +22,11 @@ import {
   type ThemeVariantKey,
 } from '@shared/custom-theme'
 
-const VSCODE_PLUS: ThemeVariant = {
-  preset: 'vscode-plus',
-  accent: '#007acc',
-  surface: '#ffffff',
-  ink: '#000000',
-  contrast: 45,
-  fontUi: null,
-  fontCode: null,
-  translucentSidebar: true,
-  diffAdded: '#008000',
-  diffRemoved: '#ee0000',
-}
-
-const CODEX_DARK: ThemeVariant = {
-  preset: 'codex-dark',
-  accent: '#339cff',
-  surface: '#181818',
-  ink: '#ffffff',
-  contrast: 60,
-  fontUi: null,
-  fontCode: null,
-  translucentSidebar: false,
-}
-
 const COLOR_RE = /^#[0-9a-f]{6}$/i
 
 type EditableThemeField = keyof Pick<
   ThemeVariant,
-  'accent' | 'surface' | 'ink' | 'contrast' | 'fontUi' | 'fontCode' | 'translucentSidebar'
+  'accent' | 'surface' | 'ink' | 'contrast' | 'fontUi' | 'fontCode' | 'translucentSidebar' | 'diffAdded' | 'diffRemoved'
 >
 
 interface ThemeVariantSectionProps {
@@ -103,12 +78,6 @@ function slotWith(theme: CustomTheme, variant: ThemeVariantKey, value?: ThemeVar
   if (value) next[variant] = value
   else delete next[variant]
   return next
-}
-
-function presetFor(variant: ThemeVariantKey, value: string): ThemeVariant | undefined {
-  if (variant === 'light' && value === 'vscode-plus') return { ...VSCODE_PLUS }
-  if (variant === 'dark' && value === 'codex-dark') return { ...CODEX_DARK }
-  return undefined
 }
 
 function ColorField({ id, value, pickerLabel, textLabel, onChange }: ColorFieldProps) {
@@ -370,25 +339,9 @@ function ThemeVariantSection({ variant, theme, onChange }: ThemeVariantSectionPr
   const configured = theme[variant]
   const [importOpen, setImportOpen] = useState(false)
   const contrastRatio = configured ? themeContrastRatio(configured.ink, configured.surface) : 21
-  const presetValue =
-    configured?.preset === 'vscode-plus' || configured?.preset === 'codex-dark'
-      ? configured.preset
-      : configured
-        ? 'custom'
-        : 'default'
-
   const changeField = <K extends EditableThemeField>(field: K, value: ThemeVariant[K]) => {
     if (!configured) return
     onChange(slotWith(theme, variant, { ...configured, [field]: value, preset: null }))
-  }
-
-  const handlePreset = (value: string) => {
-    if (value === 'default') {
-      onChange(slotWith(theme, variant))
-      return
-    }
-    const preset = presetFor(variant, value)
-    if (preset) onChange(slotWith(theme, variant, preset))
   }
 
   const copyTheme = async () => {
@@ -404,8 +357,7 @@ function ThemeVariantSection({ variant, theme, onChange }: ThemeVariantSectionPr
   return (
     <>
       <SettingsSection
-        title={t(`settings:appearance.variant${variant === 'light' ? 'Light' : 'Dark'}`)}
-        description={t(`settings:appearance.variant${variant === 'light' ? 'LightDesc' : 'DarkDesc'}`)}
+        title={t('settings:appearance.colorDetails')}
         action={
           <div className="flex items-center gap-1">
             <button type="button" className={cn(btnCompact, 'min-h-9')} onClick={() => setImportOpen(true)}>
@@ -424,25 +376,6 @@ function ThemeVariantSection({ variant, theme, onChange }: ThemeVariantSectionPr
           </div>
         }
       >
-        <SettingRow label={t('settings:appearance.preset')} description={t('settings:appearance.presetDesc')}>
-          <select
-            aria-label={t('settings:appearance.preset')}
-            value={presetValue}
-            className={selectCls}
-            onChange={(event) => handlePreset(event.target.value)}
-          >
-            <option value="default">{t('settings:appearance.presetDefault')}</option>
-            {variant === 'light' ? (
-              <option value="vscode-plus">{t('settings:appearance.presetVscodePlus')}</option>
-            ) : (
-              <option value="codex-dark">{t('settings:appearance.presetCodex')}</option>
-            )}
-            {configured && !configured.preset ? (
-              <option value="custom">{t('settings:appearance.presetCustom')}</option>
-            ) : null}
-          </select>
-        </SettingRow>
-
         {configured ? (
           <>
             <SettingRow label={t('settings:appearance.accent')} description={t('settings:appearance.accentDesc')}>
@@ -470,6 +403,24 @@ function ThemeVariantSection({ variant, theme, onChange }: ThemeVariantSectionPr
                 pickerLabel={t('settings:appearance.inkPicker')}
                 textLabel={t('settings:appearance.inkHex')}
                 onChange={(value) => changeField('ink', value)}
+              />
+            </SettingRow>
+            <SettingRow label={t('settings:appearance.diffAdded')} description={t('settings:appearance.diffAddedDesc')}>
+              <ColorField
+                id={`${variant}-theme-diff-added`}
+                value={configured.diffAdded ?? (variant === 'light' ? '#008000' : '#6f9a73')}
+                pickerLabel={t('settings:appearance.diffAddedPicker')}
+                textLabel={t('settings:appearance.diffAddedHex')}
+                onChange={(value) => changeField('diffAdded', value)}
+              />
+            </SettingRow>
+            <SettingRow label={t('settings:appearance.diffRemoved')} description={t('settings:appearance.diffRemovedDesc')}>
+              <ColorField
+                id={`${variant}-theme-diff-removed`}
+                value={configured.diffRemoved ?? (variant === 'light' ? '#ee0000' : '#d97757')}
+                pickerLabel={t('settings:appearance.diffRemovedPicker')}
+                textLabel={t('settings:appearance.diffRemovedHex')}
+                onChange={(value) => changeField('diffRemoved', value)}
               />
             </SettingRow>
             <SettingRow label={t('settings:appearance.fontUi')} description={t('settings:appearance.fontUiDesc')}>
@@ -561,19 +512,49 @@ function ThemeVariantSection({ variant, theme, onChange }: ThemeVariantSectionPr
 export function AppearanceThemeEditor() {
   const { t } = useTranslation()
   const { draft, setCustomTheme, setCustomCssOverride } = useSettingsDraft()
+  const [customizeOpen, setCustomizeOpen] = useState(false)
+  const [variant, setVariant] = useState<ThemeVariantKey>(() =>
+    draft.theme === 'dark' || (draft.theme === 'system' && document.documentElement.classList.contains('dark'))
+      ? 'dark'
+      : 'light',
+  )
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-8">
-      <ThemeVariantSection variant="light" theme={draft.customTheme} onChange={setCustomTheme} />
-      <ThemeVariantSection variant="dark" theme={draft.customTheme} onChange={setCustomTheme} />
-
-      <div className="flex items-start gap-2 rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden="true" />
-        <div className="flex flex-col gap-1">
-          <p>{t('settings:appearance.shikiHint')}</p>
-          <p>{t('settings:appearance.unsupportedHint')}</p>
-        </div>
+      <div>
+        <button
+          type="button"
+          className={btnCompact}
+          aria-expanded={customizeOpen}
+          aria-controls="appearance-customize"
+          onClick={() => setCustomizeOpen((open) => !open)}
+        >
+          {customizeOpen ? <ChevronDown className="h-3 w-3" aria-hidden="true" /> : <ChevronRight className="h-3 w-3" aria-hidden="true" />}
+          {t('settings:appearance.customize')}
+        </button>
+        {customizeOpen ? (
+          <div id="appearance-customize" className="mt-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex gap-1.5" role="group" aria-label={t('settings:appearance.editVariant')}>
+                {(['light', 'dark'] as const).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={variant === key}
+                    className={cn(btnCompact, variant === key && 'bg-accent text-foreground')}
+                    onClick={() => setVariant(key)}
+                  >
+                    {t(`settings:appearance.theme${key === 'light' ? 'Light' : 'Dark'}`)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">{t('settings:appearance.customizeDesc')}</p>
+            </div>
+            <ThemeVariantSection key={variant} variant={variant} theme={draft.customTheme} onChange={setCustomTheme} />
+            <p className="text-xs text-muted-foreground">{t('settings:appearance.shikiHint')}</p>
+          </div>
+        ) : null}
       </div>
 
       <SettingsSection

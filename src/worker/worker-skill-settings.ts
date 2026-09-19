@@ -5,12 +5,12 @@ import { st } from './worker-runtime.js'
 
 export type WorkerSkillOverrides = Record<string, boolean>
 
-function settingsPath(): string {
+export function settingsPath(): string {
   if (!st.sdk) throw new Error('SDK_NOT_READY')
   return join(st.sdk.getAgentDir(), 'settings.json')
 }
 
-function readSettings(): Record<string, unknown> {
+export function readSettings(): Record<string, unknown> {
   if (!st.sdk) return {}
   const path = settingsPath()
   if (!existsSync(path)) return {}

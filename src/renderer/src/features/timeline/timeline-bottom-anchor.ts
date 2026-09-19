@@ -48,14 +48,14 @@ export function useTimelineBottomAnchorController(
       const attempt = (pass: number) => {
         const el = scrollRef.current
         if (!el) return
-        if (!followLiveRef.current && !forceFollow) return
+        if (!followLiveRef.current) return
         scheduleTimelineScrollToBottom(el)
         if (pass < 2 && followLiveRef.current) {
           pendingVerify.current = window.requestAnimationFrame(() => attempt(pass + 1))
         }
       }
       if (pendingVerify.current) cancelAnimationFrame(pendingVerify.current)
-      requestAnimationFrame(() => attempt(0))
+      pendingVerify.current = requestAnimationFrame(() => attempt(0))
     },
     [scrollRef, followLiveRef],
   )

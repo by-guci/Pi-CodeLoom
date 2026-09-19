@@ -32,7 +32,7 @@ describe('generate-release-notes', () => {
 `
 
     const notes = buildReleaseNotesFromChangelog(changelog, '0.4.99')
-    assert.match(notes, /pi Desktop v0\.4\.99/)
+    assert.match(notes, /Pi-CodeLoom v0\.4\.99/)
     assert.match(notes, /软件内更新提醒/)
     assert.match(notes, /yaml 运行时/)
     assert.doesNotMatch(notes, /GitHub Release 正文链接/)

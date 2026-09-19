@@ -6,6 +6,7 @@ const electron = vi.hoisted(() => {
   const menuTemplates: Array<Array<{ label?: string; type?: string; click?: () => void }>> = []
   const popup = vi.fn()
   const quit = vi.fn()
+  const activate = vi.fn()
 
   class FakeTray {
     tooltip = ''
@@ -42,14 +43,14 @@ const electron = vi.hoisted(() => {
     isDestroyed = vi.fn(() => this.destroyed)
   }
 
-  return { FakeTray, FakeWindow, menuTemplates, popup, quit, trays, windows }
+  return { FakeTray, FakeWindow, menuTemplates, popup, quit, activate, trays, windows }
 })
 
 const config = vi.hoisted(() => ({ language: 'zh' as 'zh' | 'en' }))
 const icon = { isEmpty: () => false }
 
 vi.mock('electron', () => ({
-  app: { quit: electron.quit },
+  app: { quit: electron.quit, emit: electron.activate },
   Tray: electron.FakeTray,
   BrowserWindow: { getAllWindows: () => electron.windows },
   Menu: {
@@ -68,6 +69,10 @@ vi.mock('./config-store', () => ({
   configStore: { get: () => config.language },
 }))
 
+vi.mock('./window', () => ({
+  getMainWindow: () => electron.windows[0] ?? null,
+}))
+
 import { destroyAppTray, ensureAppTray } from './tray'
 
 describe('Windows app tray lifecycle', () => {
@@ -78,6 +83,7 @@ describe('Windows app tray lifecycle', () => {
     electron.menuTemplates.length = 0
     electron.popup.mockClear()
     electron.quit.mockClear()
+    electron.activate.mockClear()
     config.language = 'zh'
   })
 
@@ -88,7 +94,7 @@ describe('Windows app tray lifecycle', () => {
     expect(first).toBe(second)
     expect(electron.trays).toHaveLength(1)
     expect(electron.trays[0].image).toBe(icon)
-    expect(electron.trays[0].tooltip).toBe('pi Desktop')
+    expect(electron.trays[0].tooltip).toBe('Pi-CodeLoom')
   })
 
   it('restores and focuses the current window when the tray icon is clicked', () => {
@@ -101,6 +107,23 @@ describe('Windows app tray lifecycle', () => {
     expect(win.restore).toHaveBeenCalledOnce()
     expect(win.show).toHaveBeenCalledOnce()
     expect(win.focus).toHaveBeenCalledOnce()
+  })
+
+  it('focuses the main window on DoubleClick too', () => {
+    const win = new electron.FakeWindow()
+    electron.windows.push(win)
+    ensureAppTray('win32')
+
+    electron.trays[0].listeners.get('double-click')?.()
+
+    expect(win.show).toHaveBeenCalledOnce()
+    expect(win.focus).toHaveBeenCalledOnce()
+  })
+
+  it('requests activation when the main window no longer exists', () => {
+    ensureAppTray('win32')
+    electron.trays[0].listeners.get('click')?.()
+    expect(electron.activate).toHaveBeenCalledWith('activate')
   })
 
   it('builds an English right-click menu from current visibility and invokes native hide/quit operations', () => {

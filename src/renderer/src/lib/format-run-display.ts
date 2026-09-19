@@ -36,6 +36,8 @@ const THINKING_LABEL_KEYS: Record<string, string> = {
   medium: 'composer:thinkingMedium',
   high: 'composer:thinkingHigh',
   xhigh: 'composer:thinkingXhigh',
+  max: 'composer:thinkingMax',
+  ultra: 'composer:thinkingUltra',
 }
 
 export function normalizeThinkingLevel(raw: unknown): string | undefined {

@@ -39,7 +39,6 @@ import {
 } from '@renderer/features/settings/settings-draft'
 import { CommandPalette, ShortcutsHelpSheet } from '@renderer/features/shell/command-palette'
 import { EmptyState } from '@renderer/components/ui/empty-state'
-import { AppUpdateHost } from '@renderer/lib/app-update-notify'
 import { CloseDecisionDialog } from '@renderer/components/ui/close-decision-dialog'
 import { StatusBar } from '@renderer/features/shell/status-bar'
 import { clearExitedSessionRuntime } from '@renderer/lib/worker-exit-runtime'
@@ -290,7 +289,6 @@ export default function App() {
           </div>
         </div>
         {paletteAndShortcuts}
-        <AppUpdateHost />
         <CloseDecisionDialog />
       </ErrorBoundary>
     )
@@ -302,23 +300,26 @@ export default function App() {
         className="app-viewport flex flex-col overflow-hidden text-foreground"
         style={{ background: 'var(--surface-sidebar)' }}
       >
-        <ImmersiveChrome projectName={projectName} />
+        <ImmersiveChrome />
         <MainLayoutShell
           left={
             <Sidebar>
-              <SidebarContent>
-                <ProjectSidebar
-                  onOpenProject={handleOpenProject}
-                  openProjectLabel={t('sidebar.openProject')}
-                />
-              </SidebarContent>
-              <div className="border-t border-border/50 p-1.5">
-                <SidebarItem
-                  label={t('sidebar.settings')}
-                  icon={<SettingsIcon className="h-4 w-4" />}
-                  onClick={() => setView('settings')}
-                />
-              </div>
+            <SidebarContent>
+              <ProjectSidebar
+                onOpenProject={handleOpenProject}
+                openProjectLabel={t('sidebar.openProject')}
+                footer={
+                  <div className="border-t border-border/50 p-1.5">
+                    <SidebarItem
+                      label={t('sidebar.settings')}
+                      icon={<SettingsIcon className="h-4 w-4" />}
+                      onClick={() => setView('settings')}
+                    />
+                  </div>
+                }
+              />
+            </SidebarContent>
+            <StatusBar />
             </Sidebar>
           }
           center={
@@ -368,11 +369,9 @@ export default function App() {
             </RightPanel>
           }
         />
-        <StatusBar />
       </div>
       <AppToaster />
       <ExtensionUIHost />
-      <AppUpdateHost />
       <CloseDecisionDialog />
       {paletteAndShortcuts}
       <Suspense fallback={null}>

@@ -15,6 +15,7 @@ import {
   readGlobalSdkVersion,
   readUserSdkVersion,
   readBuiltinSdkVersion,
+  clearGlobalSdkPathCache,
   type SdkKind,
   type SdkSelection,
 } from './sdk-loader'
@@ -23,7 +24,8 @@ import {
   assertWslSdkAvailable,
   invalidateWslSdkResolveCache,
 } from './wsl/sdk-resolve'
-import { invalidateWslEnvCaches } from './wsl/wsl-exec'
+import { invalidateWslEnvCaches, isValidWslDistroName, wslDefaultShell, WSL_EXE } from './wsl/wsl-exec'
+import { resolveNpmCommand, type NpmCommand } from './npm-command'
 
 const PKG = '@earendil-works/pi-coding-agent'
 const REGISTRY_URL = 'https://registry.npmjs.org/@earendil-works%2Fpi-coding-agent'
@@ -48,6 +50,7 @@ const REGISTRY_TTL_MS = 10 * 60_000
 let registryCache: { at: number; value: { versions: string[]; latest: string | null } } | null = null
 
 export function invalidateSdkManagerCaches(): void {
+  npmAvailableCache = null
   sdkStatusCache = null
   wslSdkCache = null
   registryCache = null
@@ -59,7 +62,10 @@ export function invalidateSdkManagerCaches(): void {
 export function checkNpmAvailable(): boolean {
   if (npmAvailableCache !== null) return npmAvailableCache
   try {
-    const r = spawnSync('npm', ['--version'], { encoding: 'utf-8', shell: true, timeout: 3000 })
+    const npm = resolveNpmCommand()
+    const r = spawnSync(npm.command, [...npm.args, '--version'], {
+      encoding: 'utf-8', shell: false, windowsHide: true, timeout: 3000,
+    })
     npmAvailableCache = !r.error && r.status === 0 && !!(r.stdout || '').trim()
   } catch (e) {
     npmAvailableCache = false
@@ -180,6 +186,72 @@ export async function listRegistryVersions(): Promise<{ versions: string[]; late
 
 let installing = false
 
+function startNpmInstall(
+  args: string[],
+  onProgress: (line: string) => void,
+  cwd?: string,
+  npm: NpmCommand = resolveNpmCommand(),
+): ReturnType<typeof spawn> {
+  const child = spawn(npm.command, [...npm.args, ...args], {
+    cwd, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env },
+  })
+  const onLine = (buf: Buffer) => {
+    for (const line of buf.toString().split('\n')) {
+      const text = line.replace(/\r$/, '').trim()
+      if (text) onProgress(text)
+    }
+  }
+  child.stdout?.on('data', onLine)
+  child.stderr?.on('data', onLine)
+  return child
+}
+
+/** Upgrade npm's global installation without changing the desktop SDK selection. */
+export async function installGlobalVersion(
+  onProgress: (line: string) => void,
+  opts: { distro?: string; version?: string } = {},
+): Promise<{ version: string }> {
+  if (installing) throw new Error('正在安装，请等待当前升级完成')
+  installing = true
+  try {
+    const spec = (opts.version || 'latest').trim() || 'latest'
+    const args = ['install', '--global', `${PKG}@${spec}`, '--no-audit', '--no-fund']
+    let npm: NpmCommand | undefined
+    if (opts.distro !== undefined) {
+      if (!isValidWslDistroName(opts.distro)) throw new Error('无效的 WSL 发行版')
+      const shell = await wslDefaultShell(opts.distro)
+      npm = {
+        command: WSL_EXE,
+        args: ['-d', opts.distro, '--', shell, '-lc', `exec npm ${args.join(' ')}`],
+      }
+    }
+    await new Promise<void>((resolve, reject) => {
+      let child: ReturnType<typeof spawn>
+      try {
+        child = startNpmInstall(npm ? [] : args, onProgress, undefined, npm)
+      } catch (error) {
+        reject(new Error(`npm 启动失败: ${errorMessage(error)}`))
+        return
+      }
+      child.on('error', (error) => reject(new Error(`npm 启动失败: ${error.message}`)))
+      child.on('close', (code) => {
+        if (code === 0) resolve()
+        else reject(new Error(`npm 退出码 ${code}`))
+      })
+    })
+    clearGlobalSdkPathCache()
+    invalidateSdkManagerCaches()
+    const version = opts.distro
+      ? (await assertWslSdkAvailable(opts.distro, { refresh: true })).version
+      : readGlobalSdkVersion()
+    if (!version?.trim()) throw new Error('安装已结束，但无法确认全局 SDK 版本')
+    return { version }
+  } finally {
+    installing = false
+    invalidateSdkManagerCaches()
+  }
+}
+
 function sdkDir(): string {
   return join(app.getPath('userData'), 'sdk')
 }
@@ -269,10 +341,10 @@ export function installVersion(
 
     let child: ReturnType<typeof spawn>
     try {
-      child = spawn(
-        'npm',
+      child = startNpmInstall(
         ['install', `${PKG}@${version}`, '--no-audit', '--no-fund', '--omit=dev'],
-        { cwd: stage, shell: false, env: { ...process.env } },
+        onProgress,
+        stage,
       )
     } catch (error) {
       installing = false
@@ -288,14 +360,6 @@ export function installVersion(
       removeStage()
       reject(error)
     }
-    const onLine = (buf: Buffer) => {
-      for (const line of buf.toString().split('\n')) {
-        const t = line.replace(/\r$/, '').trim()
-        if (t) onProgress(t)
-      }
-    }
-    child.stdout?.on('data', onLine)
-    child.stderr?.on('data', onLine)
     child.on('error', (err) => {
       fail(new Error(`npm 启动失败: ${err.message}`))
     })

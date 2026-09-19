@@ -40,7 +40,7 @@ vi.mock('../session-file-meta', () => ({
   readSessionMetaFromFile: mocks.readSessionMetaFromFile,
 }))
 
-import { authorizeTrustedSessionFile } from '../trusted-workspace'
+import { authorizeTrustedCwd, authorizeTrustedSessionFile, getTrustedWorkspaceRoot } from '../trusted-workspace'
 
 describe('authorizeTrustedSessionFile', () => {
   beforeEach(() => {
@@ -61,6 +61,20 @@ describe('authorizeTrustedSessionFile', () => {
       ok: true,
       cwd: '/workspace',
       sessionFile: '/sessions/a.jsonl',
+    })
+  })
+
+  it('uses the selected project for mutations and still authorizes sessions owned by a live background worker', () => {
+    mocks.currentProject = '/selected'
+    expect(getTrustedWorkspaceRoot()).toBe('/selected')
+    expect(authorizeTrustedCwd('/selected')).toEqual({ ok: true, cwd: '/selected' })
+    expect(authorizeTrustedCwd('/workspace')).toEqual({ ok: false, error: 'cwd_not_trusted' })
+    expect(authorizeTrustedSessionFile('/workspace', '/sessions/a.jsonl')).toEqual({
+      ok: true, cwd: '/workspace', sessionFile: '/sessions/a.jsonl',
+    })
+    mocks.readSessionMetaFromFile.mockReturnValue({ sessionId: 'session-b', cwd: '/selected' })
+    expect(authorizeTrustedSessionFile('/selected', '/sessions/b.jsonl')).toEqual({
+      ok: true, cwd: '/selected', sessionFile: '/sessions/b.jsonl',
     })
   })
 

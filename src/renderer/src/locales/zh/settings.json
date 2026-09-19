@@ -18,7 +18,7 @@
     "prompts": "提示词",
     "extensions": "扩展",
     "adapters": "适配器",
-    "voice": "语音"
+    "about": "关于"
   },
   "general": {
     "title": "常规",
@@ -26,20 +26,6 @@
     "startup": "启动",
     "openLastProject": "启动时打开上次项目",
     "openLastProjectDesc": "自动恢复上次打开的项目目录",
-    "autoCheckUpdate": "自动检查更新",
-    "autoCheckUpdateDesc": "启动后后台查询 GitHub Releases；有更新时弹窗展示说明，可一键下载安装",
-    "prerelease": "包含预发布",
-    "prereleaseDesc": "检查更新时包含 GitHub 预发布版本。",
-    "appVersion": "应用版本",
-    "appVersionDesc": "手动检查更新；有新版本时弹窗展示说明并可一键下载安装",
-    "checkUpdate": "检查更新",
-    "openGitHub": "GitHub 主页",
-    "checking": "检查中…",
-    "updateCheckFailed": "检查失败",
-    "updateHasNew": "有新版本 v{{version}}（当前 v{{current}}）",
-    "updateLatest": "已是最新（v{{version}}）",
-    "foundNewVersion": "发现新版本 v{{version}}",
-    "openReleasePage": "打开发布页",
     "alert": "提醒",
     "alertSectionDesc": "统一管理提示音、系统通知和需要立即处理的交互提醒。",
     "macNotifyHint": "macOS 请在系统设置里打开通知权限，否则弹不出来。",
@@ -104,7 +90,8 @@
     "fixedOrder": "固定项目顺序",
     "fixedOrderDesc": "打开项目时保持列表顺序不变（新项目追加到末尾）；关闭时按最近使用排序（默认）",
     "noRecentProjects": "暂无最近项目",
-    "noRecentProjectsHint": "打开工作区后将出现在此"
+    "noRecentProjectsHint": "打开工作区后将出现在此",
+    "localMaintenance": "应用由本地维护。"
   },
   "runtime": {
     "sectionAgentRuntime": "Agent 运行时",
@@ -144,7 +131,82 @@
     "theme": "主题",
     "themeTitle": "主题",
     "themeLabel": "界面主题",
-    "themeDesc": "选择浅色、深色或跟随系统",
+    "themeDesc": "独立切换明暗模式，保持同一套配色风格。",
+    "colorMode": "显示模式",
+    "builtinPalettes": "内置配色",
+    "builtinPalettesDesc": "每套配色都包含浅色与深色，随显示模式自动切换。",
+    "resetPalette": "恢复默认配色",
+    "currentPalette": "当前配色：{{name}}",
+    "customize": "自定义微调",
+    "customizeDesc": "仅调整所选明暗版本，另一版本保持不变。",
+    "editVariant": "编辑明暗版本",
+    "colorDetails": "颜色与字体",
+    "palettes": {
+      "clay-hearth": {
+        "name": "Claude · 陶土",
+        "description": "暖纸白与陶土橙"
+      },
+      "codex": {
+        "name": "Codex · 石墨",
+        "description": "中性灰与清透蓝"
+      },
+      "nord": {
+        "name": "北境极光",
+        "description": "冰川灰与雾凇蓝"
+      },
+      "rose-pine": {
+        "name": "玫瑰松月",
+        "description": "柔雾底与玫瑰金"
+      },
+      "catppuccin": {
+        "name": "奶霜紫",
+        "description": "奶油底与柔和紫"
+      },
+      "tokyo-night": {
+        "name": "东京霓夜",
+        "description": "冷调底与靛青蓝"
+      },
+      "gruvbox": {
+        "name": "复古暖沙",
+        "description": "暖沙底与琥珀橙"
+      },
+      "ledger-paper": {
+        "name": "黄铜纸页",
+        "description": "羊皮纸与黄铜棕"
+      },
+      "mosswood": {
+        "name": "苔林木影",
+        "description": "林间浅雾与苔绿"
+      },
+      "ocean": {
+        "name": "深海潮汐",
+        "description": "海盐白与青碧色"
+      },
+      "jade-mist": {
+        "name": "翡翠薄雾",
+        "description": "玉白底与翡翠绿"
+      },
+      "sakura-ink": {
+        "name": "樱雪墨",
+        "description": "樱花白与莓果粉"
+      },
+      "amber-noir": {
+        "name": "琥珀夜航",
+        "description": "暖瓷白与夜航金"
+      },
+      "violet-dusk": {
+        "name": "暮山烟紫",
+        "description": "浅雾灰与烟紫色"
+      },
+      "moonstone": {
+        "name": "月白玄墨",
+        "description": "月白底与冷石灰"
+      },
+      "citrus-terminal": {
+        "name": "青柠终端",
+        "description": "青柠白与鲜明绿"
+      }
+    },
     "themeLight": "浅色",
     "themeDark": "深色",
     "themeSystem": "跟随系统",
@@ -165,8 +227,11 @@
     "presetDefault": "Pi 默认",
     "presetVscodePlus": "VS Code Plus（浅色）",
     "presetCodex": "Codex（深色）",
+    "presetClayHearth": "陶土炉火",
+    "presetLedgerPaper": "账本纸页",
+    "presetMosswood": "苔林木影",
     "presetCustom": "自定义",
-    "defaultSlotHint": "当前使用 Pi 默认外观。选择预设或导入主题后可编辑各项。",
+    "defaultSlotHint": "请先在上方选择一套内置配色，或导入主题后再微调。",
     "accent": "强调色",
     "accentDesc": "品牌指示条、选中态与焦点色。",
     "accentPicker": "强调色色板",
@@ -179,6 +244,14 @@
     "inkDesc": "主文本颜色；次级与禁用文本由此推导。",
     "inkPicker": "前景色色板",
     "inkHex": "前景色十六进制值",
+    "diffAdded": "新增色",
+    "diffAddedDesc": "Review / diff 里新增行的颜色。",
+    "diffAddedPicker": "新增色色板",
+    "diffAddedHex": "新增色十六进制值",
+    "diffRemoved": "删除色",
+    "diffRemovedDesc": "Review / diff 里删除行的颜色。",
+    "diffRemovedPicker": "删除色色板",
+    "diffRemovedHex": "删除色十六进制值",
     "fontUi": "UI 字体",
     "fontUiDesc": "仅填写本机字体名；留空使用默认系统字体栈。",
     "fontUiPlaceholder": "默认系统字体",
@@ -209,7 +282,7 @@
     "importTarget": "目标槽位",
     "importSource": "来源格式",
     "importIgnored": "不支持字段",
-    "singleVariantHint": "Codex 串的 variant 是单值，一次只会填入浅色或深色一张卡。若串内 variant 与当前卡不同，将按串内目标写入。",
+    "singleVariantHint": "主题串一次只包含一个明暗版本，将按串内指定的浅色或深色导入。",
     "unsupportedFields": "{{count}} 个字段本版本不支持，已安全忽略。",
     "unsupportedHint": "导入时 codeThemeId、semanticColors.skill 等无对应能力的字段会被安全忽略并显示数量。",
     "shikiHint": "代码高亮（Shiki）暂不随自定义主题变化。",
@@ -271,6 +344,12 @@
     "switchSuccessUser": "已切换到独立环境",
     "switchFailed": "切换失败",
     "upgradeEnv": "升级独立环境",
+    "upgradeGlobal": "升级全局环境",
+    "upgradeGlobalAction": "升级全局",
+    "upgradingGlobal": "升级中…",
+    "globalUpgradeFailed": "全局升级失败",
+    "globalUpgradeSuccess": "全局 SDK 已升级到 {{version}}",
+    "globalUpgradeRestartRequired": "请重启桌面后生效。",
     "selectVersion": "选择版本…",
     "latest": "(latest)",
     "installing": "安装中…",
@@ -305,6 +384,8 @@
     "thinkingMedium": "中",
     "thinkingHigh": "高",
     "thinkingXhigh": "极高",
+    "thinkingMax": "最大",
+    "thinkingUltra": "超限",
     "modelWhitelist": "模型白名单",
     "modelWhitelistDesc": "enabledModels，逗号分隔 glob（留空=全部）",
     "hideThinking": "隐藏思考块",
@@ -520,68 +601,10 @@
     "providerLabelPrefix": "供应商",
     "noModelToAdd": "没有可添加的模型",
     "cancelBtn": "取消",
-    "ctrlEnterHint": "Ctrl+Enter 确认"
-  },
-  "voice": {
-    "advancedTitle": "高级",
-    "clearSavedToken": "清除已保存的 Token",
-    "accessTokenStoredPlaceholder": "已保存（{{preview}}），留空并保存其它项不会清除；要更换请粘贴新 Token",
-    "title": "语音输入",
-    "description": "配置语音转写 provider，用于 Composer 录音转文字。未配置时不影响文字输入。",
-    "provider": "Provider",
-    "providerNone": "未启用",
-    "providerCli": "codex-asr CLI",
-    "providerServe": "codex-asr serve",
-    "cliBinaryPath": "二进制路径",
-    "cliBinaryPathDesc": "codex-asr 可执行文件路径",
-    "autoDetect": "自动检测",
-    "detecting": "检测中…",
-    "detectFound": "已检测到：{{path}}",
-    "detectNotFound": "未在 PATH 中找到 codex-asr",
-    "serverUrl": "服务地址",
-    "serverUrlDesc": "codex-asr serve 监听地址（默认 http://127.0.0.1:8788）",
-    "apiKey": "API Key",
-    "apiKeyDesc": "serve 启用了 --api-key 时填写",
-    "language": "语言",
-    "languageAuto": "自动检测",
-    "timeout": "超时（秒）",
-    "testConnection": "测试转写接口",
-    "testing": "测试中…",
-    "testSuccess": "连接成功",
-    "testFailed": "连接失败",
-    "installHint": "安装方法",
-    "installUrl": "https://github.com/Wangnov/codex-asr/releases/latest",
-    "langZh": "中文",
-    "langEn": "English",
-    "descriptionBuiltin": "使用 ChatGPT / Codex 会话在应用内直连转写（无需 OpenAI API Key，也无需本地 codex-asr 进程）。",
-    "builtinTitle": "内置语音服务",
-    "builtinDesc": "粘贴 access_token 或使用本机 ~/.codex/auth.json；转写请求发往 ChatGPT 后端。",
-    "builtinOn": "已启用",
-    "builtinEnable": "启用内置",
-    "codexLogin": "Codex 登录",
-    "codexLoginDesc": "可粘贴 JWT（eyJ…），或从本机 auth.json 填入；验证登录仅在本机检查，不会上传 token。未点底部「保存」前，对话区录音可能仍用旧配置。",
-    "pullCodexAuth": "从本机 Codex 读取登录",
-    "codexAuthOk": "已检测到有效登录",
-    "codexAuthMissing": "未检测到登录",
-    "tokenPreview": "Token 预览：{{preview}}",
-    "authFileOverride": "auth.json 路径（可选）",
-    "authFilePlaceholder": "默认 ~/.codex/auth.json",
-    "bundledBinaryOk": "已打包 codex-asr 可执行文件。",
-    "bundledBinaryFallback": "未打包二进制时将使用 PATH 中的 codex-asr（可自行安装）。",
-    "serveRunning": "服务运行中",
-    "showAdvanced": "高级：CLI / 外部 serve",
-    "advancedHint": "可选：使用本机 codex-asr 命令行或自建 HTTP serve；默认内置直连无需此项。",
-    "unsavedVoiceHint": "语音相关改动尚未保存。对话区会预览当前草稿；点击页面底部「保存」后写入磁盘。",
-    "cliInstallHint": "仅在使用高级 CLI 模式时需要安装",
-    "hideAdvanced": "收起高级选项",
-    "localApiKeyPlaceholder": "本地 serve 的 API Key（非 ChatGPT token）",
-    "accessTokenManual": "access_token（手动）",
-    "accessTokenPlaceholder": "粘贴 ChatGPT JWT（eyJ…），保存后优先于 auth.json",
-    "verifyAuth": "检查 token",
-    "fillFromAuthFile": "从 auth.json 填入",
-    "authSourceManual": "手动配置",
-    "authSourceFile": "来自文件",
-    "builtinRuntimeHint": "内置已改为应用内直连 ChatGPT 转写接口（https://chatgpt.com/backend-api/transcribe），无需安装 codex-asr 或本地 serve。"
+    "ctrlEnterHint": "Ctrl+Enter 确认",
+    "lookupFill": "从 models.dev 补全",
+    "lookupFilled": "已从 models.dev 填写 {{id}}",
+    "lookupMiss": "models.dev 未收录 {{id}}"
   },
   "prompts": {
     "title": "提示词与上下文",
@@ -711,5 +734,14 @@
   "common_confirm": {
     "confirm": "确定",
     "cancel": "取消"
+  },
+  "about": {
+    "title": "关于",
+    "description": "当前安装的 Pi-CodeLoom 版本和运行时信息。",
+    "sectionApp": "应用",
+    "appName": "应用名称",
+    "version": "版本",
+    "platform": "系统",
+    "sectionRuntime": "运行时"
   }
 }

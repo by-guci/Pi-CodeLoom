@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 // Worker Manager - multi-session utility process pool (sessionKey + workspace keys)
 
 import { type BrowserWindow } from 'electron'
@@ -363,7 +364,7 @@ export class WorkerManager {
         code,
         cwd: slot.cwd,
         sessionFile: slot.sessionFile,
-        message: 'Worker 已退出。请重新打开工作区；若界面空白请先结束任务管理器里多余的 pi Desktop 进程。',
+        message: `Worker 已退出。请重新打开工作区；若界面空白请先结束任务管理器里多余的 ${APP_DISPLAY_NAME} 进程。`,
       })
     }
   }

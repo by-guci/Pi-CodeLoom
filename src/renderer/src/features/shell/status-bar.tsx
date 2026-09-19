@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Cpu, RefreshCw, ArrowUp } from '@renderer/components/icons'
+import { ChevronDown, Cpu, RefreshCw } from '@renderer/components/icons'
 import type { SessionItem } from '@renderer/stores/ui-store-types'
-import { ipcClient, onAppUpdateAvailable } from '@renderer/lib/ipc-client'
-import { showAppUpdateDialog } from '@renderer/lib/app-update-notify'
+import { ipcClient } from '@renderer/lib/ipc-client'
 import { countAttention, listAttentionSessions, type SessionAttention } from '@renderer/lib/session-attention'
 import { activateWorkspace, switchSessionInPlace } from '@renderer/lib/activate-workspace'
 import { sessionFilesEqual } from '@renderer/lib/session-file-key'
@@ -24,7 +23,6 @@ export function StatusBar() {
   const [status, setStatus] = useState<{ rss: number; total: number; workers: WorkerRow[] } | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [openUpdate, setOpenUpdate] = useState<(() => void) | null>(null)
   const [popover, setPopover] = useState<Popover>(null)
   const [confirmStop, setConfirmStop] = useState<string | null>(null)
   const [stopping, setStopping] = useState(false)
@@ -49,10 +47,8 @@ export function StatusBar() {
   useEffect(() => {
     void refresh()
     const timer = window.setInterval(() => void refresh(), 5000)
-    const unsub = onAppUpdateAvailable((update) => setOpenUpdate(() => () => showAppUpdateDialog(update)))
     return () => {
       window.clearInterval(timer)
-      unsub()
     }
   }, [refresh])
 
@@ -110,21 +106,20 @@ export function StatusBar() {
 
   return (
     <footer className="workbench-statusbar electron-no-drag" aria-label={t('common:statusBar.title')}>
-      <button ref={boardAnchor} type="button" className="workbench-status-trigger" aria-haspopup="dialog" aria-expanded={popover === 'board'} aria-label={t('common:board.title')} onClick={() => setPopover((v) => v === 'board' ? null : 'board')}>
-        {live === 0 ? <span className="flex items-center gap-2"><span className="status-ready-dot" />{t('common:app.status.ready')}</span> : (
-          <>
-            {counts.needsYou > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="needs-you" />{t('common:statusBar.needsYou', { count: counts.needsYou })}</span>}
-            {counts.working > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="working" />{t('common:statusBar.running', { count: counts.working })}</span>}
-            {counts.done > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="done" />{t('common:statusBar.done', { count: counts.done })}</span>}
-          </>
-        )}
-        <ChevronDown className="h-3 w-3 shrink-0 rotate-180 opacity-60" />
-      </button>
-      <div className="ml-auto flex shrink-0 items-center">
+      <div className="flex min-w-0 items-center gap-1">
+        <button ref={boardAnchor} type="button" className="workbench-status-trigger" aria-haspopup="dialog" aria-expanded={popover === 'board'} aria-label={t('common:board.title')} onClick={() => setPopover((v) => v === 'board' ? null : 'board')}>
+          {live === 0 ? <span className="flex items-center gap-2"><span className="status-ready-dot" />{t('common:app.status.ready')}</span> : (
+            <>
+              {counts.needsYou > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="needs-you" />{t('common:statusBar.needsYou', { count: counts.needsYou })}</span>}
+              {counts.working > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="working" />{t('common:statusBar.running', { count: counts.working })}</span>}
+              {counts.done > 0 && <span className="flex items-center gap-1.5"><SessionAttentionDot attention="done" />{t('common:statusBar.done', { count: counts.done })}</span>}
+            </>
+          )}
+          <ChevronDown className="h-3 w-3 shrink-0 rotate-180 opacity-60" />
+        </button>
         <button ref={workersAnchor} type="button" className="workbench-status-trigger tabular-nums" data-level={level} aria-haspopup="dialog" aria-expanded={popover === 'workers'} aria-label={t('common:statusBar.resources')} title={t('common:statusBar.memoryHint')} onClick={() => { setPopover((v) => v === 'workers' ? null : 'workers'); void refresh() }}>
           <Cpu className="h-3 w-3" /><span>{memory}</span>
         </button>
-        {openUpdate && <button type="button" className="workbench-status-trigger" title={t('common:statusBar.update')} aria-label={t('common:statusBar.update')} onClick={openUpdate}><ArrowUp className="h-3 w-3" /></button>}
       </div>
 
       {popover && (

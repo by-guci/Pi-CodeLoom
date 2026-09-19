@@ -36,6 +36,7 @@ import {
 import {
   TIMELINE_LOAD_OLDER_SCROLL_TOP_PX,
   TIMELINE_STREAM_TAIL_PAD_PX,
+  cancelTimelineScrollToBottom,
   scheduleTimelineScrollToBottom,
   useTimelineLiveFollow,
 } from './timeline-follow-scroll'
@@ -46,6 +47,7 @@ import {
   useTimelineBottomAnchorController,
 } from './timeline-bottom-anchor'
 import { TimelineBottomAnchorButton } from './timeline-bottom-anchor-button'
+import { TimelineOutlineRail } from './timeline-outline-rail'
 import { splitTimelineRenderSegments, sliceHistoryForViewport } from './timeline-render-segments'
 import { pickAutoExpandedToolIds } from './timeline-tool-expand-policy'
 import { groupDisplayBlocksByTurn } from './timeline-turn-groups'
@@ -342,6 +344,7 @@ export function Timeline() {
   const currentWorkspace = useUIStore((s) => s.currentWorkspace)
   const ephemeralDraft = useUIStore((s) => s.ephemeralSandboxDraft)
   const hasWorkspace = !!currentWorkspace || ephemeralDraft
+  const hasTimelineContent = hasWorkspace && items.length > 0
   const isEphemeralEmpty = ephemeralDraft && !currentWorkspace
   const historyTotalCount = useUIStore((s) => s.historyTotalCount)
   const historyLoadedCount = useUIStore((s) => s.historyLoadedCount)
@@ -405,6 +408,7 @@ export function Timeline() {
       // A view jump is a navigation away from the leaf: detach live-follow so the
       // follow controller never pins the viewport back to the bottom after the reveal.
       followLiveRef.current = false
+      if (scrollRef.current) cancelTimelineScrollToBottom(scrollRef.current)
       setViewTarget(entryId)
     }
     window.addEventListener(TIMELINE_VIEW_ENTRY_EVENT, onViewEntry)
@@ -422,6 +426,7 @@ export function Timeline() {
       const entryId = viewTarget
       const escaped = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(entryId) : entryId
       const row = el.querySelector(`[data-session-entry-id="${escaped}"]`)
+        ?? el.querySelector(`[data-item-id="${escaped}"]`)
       if (row) {
         followLiveRef.current = false
         row.scrollIntoView({ block: 'center' })
@@ -598,7 +603,7 @@ export function Timeline() {
       el.removeEventListener('wheel', onWheel)
       ro.disconnect()
     }
-  }, [hasWorkspace, onUserScrollIntent, historySessionFile])
+  }, [hasTimelineContent, onUserScrollIntent, historySessionFile])
   const scrollHeightBeforeLoadRef = useRef<{ scrollTop: number; scrollHeight: number } | null>(null)
   const renderCountRef = useRef(renderCount)
   renderCountRef.current = renderCount
@@ -705,7 +710,7 @@ export function Timeline() {
     followLiveRef.current = true
     requestAnimationFrame(() => {
       const el = scrollRef.current
-      if (el) scheduleTimelineScrollToBottom(el)
+      if (el && followLiveRef.current) scheduleTimelineScrollToBottom(el)
     })
   }, [historySessionFile, followLiveRef])
 
@@ -791,7 +796,6 @@ export function Timeline() {
       }
     }
     return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: structureEpoch only
   }, [structureEpoch])
 
   if (!hasWorkspace) {
@@ -926,7 +930,7 @@ export function Timeline() {
   }
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="timeline-with-outline relative flex min-h-0 min-w-0 flex-1 flex-col">
     <OverlayScrollHost
       className="timeline-scroll-viewport timeline-scroll-with-dock min-h-0 flex-1 w-full"
       scrollClassName="timeline-scroll-with-dock-pane w-full"
@@ -995,11 +999,11 @@ export function Timeline() {
                 />
               )
               return userEntryId ? (
-                <div data-session-entry-id={userEntryId} data-item-id={turn.userItem.id}>
+                <div data-session-entry-id={userEntryId} data-item-id={turn.userItem.id} data-outline-turn-id={userEntryId}>
                   {userRow}
                 </div>
               ) : (
-                <div data-item-id={turn.userItem.id}>{userRow}</div>
+                <div data-item-id={turn.userItem.id} data-outline-turn-id={turn.userItem.id}>{userRow}</div>
               )
             })()}
             {turn.blocks.map((block, bi) => {
@@ -1054,6 +1058,13 @@ export function Timeline() {
       />
       </div>
     </OverlayScrollHost>
+    <TimelineOutlineRail
+      key={historySessionFile || 'timeline'}
+      items={items}
+      sessionFile={historySessionFile}
+      scrollRef={scrollRef}
+      contentRef={contentRef}
+    />
     <TimelineBottomAnchorButton
       scrollRef={scrollRef}
       followLiveRef={followLiveRef}

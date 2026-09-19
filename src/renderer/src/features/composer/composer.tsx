@@ -22,8 +22,6 @@ import { refreshComposerRunDisplay } from '@renderer/lib/composer-run-display'
 import { useComposerInputHistory } from './use-composer-input-history'
 import { RichInput, syncRichInputEmpty } from './rich-input'
 import { hideAllDelayedTooltips } from './delayed-tooltip'
-import { useVoiceInput } from './use-voice-input'
-import { ComposerVoiceMicButton, ComposerVoiceInputOverlay } from './composer-voice-ui'
 import {
   applyLiveSnapshotToView,
   fetchWorkerLiveSnapshot,
@@ -33,7 +31,6 @@ import {
 } from '@renderer/lib/session-worker-sync'
 import { useSessionChrome } from '@renderer/lib/session-chrome'
 import { useExtensionUIStore } from '@renderer/stores/extension-ui-store'
-import { insertTextAtCursor } from './composer-editor-caret'
 import { makeComposerEditorAdapter } from './composer-editor-adapter'
 import { useComposerSlash } from './use-composer-slash'
 import { ComposerSlashPopover } from './composer-slash-popover'
@@ -115,10 +112,6 @@ export function Composer() {
   const composerPrefillMode = useUIStore((s) => s.composerPrefillMode)
   const setComposerPrefill = useUIStore((s) => s.setComposerPrefill)
   const metrics = useComposerMetrics()
-  const { voiceState, toggle: toggleVoice, holdStart, holdEnd, disabled: voiceDisabled } = useVoiceInput(canSendMessages, (spoken) => {
-    const el = editorRef.current
-    if (el) insertTextAtCursor(el, spoken)
-  })
 
   useEffect(() => {
     if (!sessionPreview) return
@@ -206,7 +199,7 @@ export function Composer() {
     editorRef,
     revision: editorRevision,
     workspaceRoot: currentWorkspace,
-    enabled: canSendMessages && voiceState !== 'recording' && voiceState !== 'transcribing',
+    enabled: canSendMessages,
     onAccepted: updateFromEditor,
   })
 
@@ -405,8 +398,6 @@ export function Composer() {
           sessionPreview && 'opacity-90',
           composerFocused && 'composer-shell-focused',
           isDragActive && 'border-dashed !border-primary/50',
-          voiceState === 'recording' && 'composer-shell--voice-recording',
-          voiceState === 'transcribing' && 'composer-shell--voice-transcribing',
         )}
       >
         <div
@@ -433,15 +424,6 @@ export function Composer() {
           </div>
         )}
         <div className="relative flex flex-col gap-1 px-2.5 pb-2 pt-2">
-          <ComposerVoiceInputOverlay
-            voiceState={voiceState}
-            active={
-              !showComposerStop &&
-              !text.trim() &&
-              attachments.length === 0 &&
-              (voiceState === 'recording' || voiceState === 'transcribing')
-            }
-          />
           <RichInput
             ref={editorRef}
             onKeyDown={handleKeyDown}
@@ -457,17 +439,15 @@ export function Composer() {
               updateFromEditor()
             }}
             placeholder={
-              voiceState === 'recording' || voiceState === 'transcribing'
-                ? ''
-                : sessionPreview
-                  ? t('composer:subagentPreviewReadOnly')
-                  : ephemeralSandboxDraft && !currentWorkspace
-                    ? t('composer:firstMsgIsTitle')
-                    : canCompose
-                      ? t('composer:placeholder')
-                      : t('composer:selectProjectFirst')
+              sessionPreview
+                ? t('composer:subagentPreviewReadOnly')
+                : ephemeralSandboxDraft && !currentWorkspace
+                  ? t('composer:firstMsgIsTitle')
+                  : canCompose
+                    ? t('composer:placeholder')
+                    : t('composer:selectProjectFirst')
             }
-            disabled={!canSendMessages || voiceState === 'transcribing' || voiceState === 'recording'}
+            disabled={!canSendMessages}
           />
           <div className="composer-toolbar flex min-h-[30px] items-center gap-1.5">
             <button
@@ -505,32 +485,15 @@ export function Composer() {
                   <Square className="h-3.5 w-3.5 fill-current" />
                 </button>
               )}
-              {(() => {
-                const hasContent = !!text.trim() || attachments.length > 0
-                const voicePrimary = !showComposerStop && !hasContent
-                if (voicePrimary) {
-                  return (
-                    <ComposerVoiceMicButton
-                      voiceState={voiceState}
-                      disabled={voiceDisabled}
-                      onClick={toggleVoice}
-                      onHoldStart={holdStart}
-                      onHoldEnd={holdEnd}
-                    />
-                  )
-                }
-                return (
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={(!text.trim() && attachments.length === 0) || !canSendMessages}
-                    title={showComposerStop ? t('composer:joinQueue') : t('composer:send')}
-                    className="composer-toolbar-send composer-send flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-25 disabled:pointer-events-none"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                  </button>
-                )
-              })()}
+              <button
+                type="button"
+                onClick={handleSend}
+                disabled={(!text.trim() && attachments.length === 0) || !canSendMessages}
+                title={showComposerStop ? t('composer:joinQueue') : t('composer:send')}
+                className="composer-toolbar-send composer-send flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-25 disabled:pointer-events-none"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         </div>

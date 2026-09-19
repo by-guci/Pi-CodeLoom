@@ -189,8 +189,21 @@ export interface PiModelsFetchResponse {
   error?: string
 }
 
+export interface PiModelsLookupRequest { ids: string[] }
+export interface PiModelsLookupSpec {
+  name?: string
+  reasoning?: boolean
+  input?: ('text' | 'image')[]
+  contextWindow?: number
+  maxTokens?: number
+}
+export interface PiModelsLookupResponse {
+  ok: boolean
+  models?: Record<string, PiModelsLookupSpec>
+  error?: string
+}
 // ── ThinkingLevel ──
-export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra'
 export interface ThinkingLevelSetRequest {
   sessionId: string
   sessionFile?: string
@@ -270,26 +283,12 @@ export interface SettingsGetResponse { settings: Record<string, unknown> }
 export interface SettingsSetRequest { key: string; value: unknown }
 export interface SettingsSetResponse { key: string; value: unknown }
 
-// ── App update (GitHub Releases) ──
-export interface AppCheckUpdateRequest {}
-export type AppCheckUpdateResponse = import('./app-update').AppUpdateCheckResult
-export interface AppOpenReleaseRequest { url?: string }
-export interface AppOpenReleaseResponse { ok: boolean }
-export interface AppGetPendingUpdateRequest {}
-export interface AppGetPendingUpdateResponse {
-  update: import('./app-update').AppUpdateAvailableInfo | null
-}
-export interface AppDismissUpdatePromptRequest {}
-export interface AppDismissUpdatePromptResponse { ok: boolean }
-export interface AppIgnoreUpdateVersionRequest { version: string }
-export interface AppIgnoreUpdateVersionResponse { ok: boolean }
-export interface AppDownloadUpdateRequest {
-  url: string
-  fileName?: string
-}
-export interface AppDownloadUpdateResponse {
+// ── SDK ──
+export interface SdkUpgradeGlobalRequest { version: string }
+export interface SdkUpgradeGlobalResponse {
   ok: boolean
-  path?: string
+  version?: string
+  restartRequired?: boolean
   error?: string
 }
 
@@ -323,6 +322,7 @@ export interface IpcMethodMap {
   'pi.models.get': { request: PiModelsGetRequest; response: PiModelsGetResponse }
   'pi.models.set': { request: PiModelsSetRequest; response: PiModelsSetResponse }
   'pi.models.fetch': { request: PiModelsFetchRequest; response: PiModelsFetchResponse }
+  'pi.models.lookup': { request: PiModelsLookupRequest; response: PiModelsLookupResponse },
   'thinkingLevel.set': { request: ThinkingLevelSetRequest; response: ThinkingLevelSetResponse }
   'commands.list': { request: CommandsListRequest; response: CommandsListResponse }
   'review.getDiff': { request: ReviewGetDiffRequest; response: ReviewGetDiffResponse }
@@ -334,24 +334,8 @@ export interface IpcMethodMap {
   'registry.refresh': { request: RegistryRefreshRequest; response: RegistryRefreshResponse }
   'settings.get': { request: SettingsGetRequest; response: SettingsGetResponse }
   'settings.set': { request: SettingsSetRequest; response: SettingsSetResponse }
-  'app.checkUpdate': { request: AppCheckUpdateRequest; response: AppCheckUpdateResponse }
-  'app.getPendingUpdate': {
-    request: AppGetPendingUpdateRequest
-    response: AppGetPendingUpdateResponse
-  }
-  'app.dismissUpdatePrompt': {
-    request: AppDismissUpdatePromptRequest
-    response: AppDismissUpdatePromptResponse
-  }
-  'app.openRelease': { request: AppOpenReleaseRequest; response: AppOpenReleaseResponse }
-  'app.ignoreUpdateVersion': {
-    request: AppIgnoreUpdateVersionRequest
-    response: AppIgnoreUpdateVersionResponse
-  }
-  'app.downloadUpdate': {
-    request: AppDownloadUpdateRequest
-    response: AppDownloadUpdateResponse
-  }
+  'sdk.upgradeGlobal': { request: SdkUpgradeGlobalRequest; response: SdkUpgradeGlobalResponse }
+  'desktop.appName': { request: Record<string, never>; response: { name: string; version: string; electron?: string; chrome?: string; node?: string; platform?: string; arch?: string } }
   'events.subscribe': { request: EventsSubscribeRequest; response: EventsSubscribeResponse; stream: AppEvent }
 }
 

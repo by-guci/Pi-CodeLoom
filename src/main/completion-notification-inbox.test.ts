@@ -21,7 +21,7 @@ function event(partial: Partial<CompletionEvent> = {}): CompletionEvent {
 }
 
 describe('completion inbox', () => {
-  it('keeps delivered cards for later review', () => {
+  it('keeps delivered cards until marked known', () => {
     vi.useFakeTimers()
     const delivered: unknown[] = []
     const ctrl = createCompletionNotificationController({
@@ -51,7 +51,7 @@ describe('completion inbox', () => {
     expect(ctrl.listInbox()).toHaveLength(1)
     expect(ctrl.listInbox()[0].unread).toBe(true)
     ctrl.markInboxRead(ctrl.listInbox()[0].notificationId)
-    expect(ctrl.listInbox()[0].unread).toBe(false)
+    expect(ctrl.listInbox()).toHaveLength(0)
     vi.useRealTimers()
   })
 })

@@ -8,15 +8,7 @@ import { useUIStore } from '@renderer/stores/ui-store'
 import { isMac, MAC_TRAFFIC_LIGHTS_SPACER_CLASS } from '@renderer/lib/platform'
 
 /** 无边框窗口顶栏：可拖拽区域 + 侧栏开关（主对话页无厚重 TopBar；无运行绿点/状态条） */
-export function ImmersiveChrome({
-  projectName,
-}: {
-  projectName?: string
-  /** @deprecated ignored — status strip removed for lower chrome noise */
-  isRunning?: boolean
-  /** @deprecated ignored */
-  statusLabelKey?: string
-}) {
+export function ImmersiveChrome() {
   const { t } = useTranslation()
   const collapsed = useUIStore((s) => s.sidebarCollapsed)
   const toggleSidebar = useUIStore((s) => s.toggleSidebar)
@@ -42,13 +34,7 @@ export function ImmersiveChrome({
         </button>
         <div className="flex items-center gap-1.5 px-1 text-[12px] text-foreground-secondary select-none">
           <PiMark size={14} className="rounded-[3px]" />
-          <span className="font-medium text-foreground/90">pi</span>
-          {projectName && (
-            <>
-              <span className="opacity-35">/</span>
-              <span className="max-w-[200px] truncate">{projectName}</span>
-            </>
-          )}
+          <span className="font-medium text-foreground/90">{t('common:app.name')}</span>
         </div>
       </div>
       <div className="electron-no-drag flex h-9 items-center gap-2">

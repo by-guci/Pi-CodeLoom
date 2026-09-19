@@ -22,12 +22,10 @@ import {
   type ThemeChoice,
   type LanguageChoice,
 } from '@renderer/features/settings/settings-draft'
-import type { AsrConfig } from '@shared/asr-types'
 import type { CompletionDeliveryMode, CompletionPreviewMode } from '@shared/completion-preview'
 import type { IconTheme } from '@shared/icon-theme'
 import type { CustomCssOverride, CustomTheme } from '@shared/custom-theme'
 import { normalizeTimelineMaxAutoExpandedTools } from '@shared/timeline-settings'
-import { setAsrConfigPreview } from '@renderer/lib/asr-config-effective'
 import {
   defaultRightPanelPrefsForCatalog,
   normalizeRightPanelOrder,
@@ -56,8 +54,6 @@ type SettingsDraftContextValue = {
   setCustomCssOverride: (override: CustomCssOverride) => void
   setLanguage: (l: LanguageChoice) => void
   setAutoOpenLastProject: (v: boolean) => void
-  setAutoCheckRegistryUpdates: (v: boolean) => void
-  setIncludePrereleaseUpdates: (v: boolean) => void
   setAlertSoundEnabled: (v: boolean) => void
   setAlertNotificationEnabled: (v: boolean) => void
   setAlertOnExtensionUi: (v: boolean) => void
@@ -78,7 +74,6 @@ type SettingsDraftContextValue = {
   reorderRightPanels: (fromId: string, toIndex: number) => void
   resetRightPanelsToDefault: () => void
   refreshRightPanelCatalog: () => Promise<void>
-  setAsrConfig: (patch: Partial<AsrConfig>) => void
   discard: () => Promise<void>
   save: () => Promise<boolean>
 }
@@ -109,7 +104,6 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
       const d = await loadSettingsDraftFromDisk(i18n.language)
       setDraft(d)
       setBaselineSig(draftSignature(d))
-      setAsrConfigPreview(d.asrConfig)
       // Re-apply disk theme so the selected option matches the document (preview only on patch/discard/save otherwise).
       previewDraftUi(d, i18n)
       useUIStore.getState().setTheme(d.theme)
@@ -140,9 +134,7 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
         const d = draftRef.current
         if (!d) return
         if (draftSignature(d) === baselineSigRef.current) return
-        const savedAsr = await commitSettingsDraft(d, i18n)
-        setDraft((prev) => (prev ? { ...prev, asrConfig: savedAsr } : prev))
-        setAsrConfigPreview(savedAsr)
+        await commitSettingsDraft(d, i18n)
         baselineSigRef.current = draftSignature(d)
         setBaselineSig(baselineSigRef.current)
       },
@@ -162,8 +154,6 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
       if (!prev) return prev
       const next = fn(prev)
       previewDraftUi(next, i18n)
-      setAsrConfigPreview(next.asrConfig)
-      window.dispatchEvent(new CustomEvent('pi-desktop:asr-config-preview', { detail: next.asrConfig }))
       return next
     })
     notifySettingsDirtyChanged()
@@ -177,8 +167,6 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
     baselineSigRef.current = sig
     draftDirtyRef.current = false
     previewDraftUi(d, i18n)
-    setAsrConfigPreview(d.asrConfig)
-    window.dispatchEvent(new CustomEvent('pi-desktop:asr-config-preview', { detail: d.asrConfig }))
     useUIStore.getState().applyRightPanelRuntime(d.rightPanelCatalog, d.rightPanelPrefs, d.rightPanelOrder)
     notifySettingsDirtyChanged()
   }, [])
@@ -196,14 +184,11 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
       await commitAllSettingsSlices()
       const d = draftRef.current
       if (d) {
-        // Prefer signature of the committed draft (commit mutates asrConfig in place).
         const sig = draftSignature(d)
         baselineSigRef.current = sig
         draftDirtyRef.current = false
         setBaselineSig(sig)
         setDraft({ ...d })
-        setAsrConfigPreview(d.asrConfig)
-        window.dispatchEvent(new CustomEvent('pi-desktop:asr-config-preview', { detail: d.asrConfig }))
       }
       setSliceDirtyTick((n) => n + 1)
       notifySettingsDirtyChanged()
@@ -252,8 +237,6 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
       setCustomCssOverride: (override) => patch((d) => ({ ...d, customCssOverride: override })),
       setLanguage: (l) => patch((d) => ({ ...d, language: l })),
       setAutoOpenLastProject: (v) => patch((d) => ({ ...d, autoOpenLastProject: v })),
-      setAutoCheckRegistryUpdates: (v) => patch((d) => ({ ...d, autoCheckRegistryUpdates: v })),
-      setIncludePrereleaseUpdates: (v) => patch((d) => ({ ...d, includePrereleaseUpdates: v })),
       setAlertSoundEnabled: (v) => patch((d) => ({ ...d, alertSoundEnabled: v })),
       setAlertNotificationEnabled: (v) => patch((d) => ({ ...d, alertNotificationEnabled: v })),
       setAlertOnExtensionUi: (v) => patch((d) => ({ ...d, alertOnExtensionUi: v })),
@@ -312,8 +295,6 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
           rightPanelPrefs: defaultRightPanelPrefsForCatalog(d.rightPanelCatalog, []),
           rightPanelOrder: normalizeRightPanelOrder([], d.rightPanelCatalog),
         })),
-      setAsrConfig: (p: Partial<AsrConfig>) =>
-        patch((d) => ({ ...d, asrConfig: { ...d.asrConfig, ...p } })),
       refreshRightPanelCatalog,
       discard: discardAll,
       save,

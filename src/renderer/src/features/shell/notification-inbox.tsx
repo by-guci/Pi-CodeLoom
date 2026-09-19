@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Inbox, RefreshCw, Check, Circle } from '@renderer/components/icons'
+import { Inbox, RefreshCw, Check } from '@renderer/components/icons'
 import { ipcClient } from '@renderer/lib/ipc-client'
 import { useUIStore } from '@renderer/stores/ui-store'
 import { listAttentionSessions } from '@renderer/lib/session-attention'
@@ -79,12 +79,11 @@ export function NotificationInbox() {
     }
   }
 
-  const toggleRead = async (item: InboxItem) => {
+  const dismiss = async (item: InboxItem) => {
     setPending(item.notificationId)
     setActionError(null)
     try {
-      if (item.unread) await ipcClient.invoke('notifications.markRead', { id: item.notificationId })
-      else await ipcClient.invoke('notifications.markUnread', { id: item.notificationId, unread: true })
+      await ipcClient.invoke('notifications.markRead', { id: item.notificationId })
       await load()
     } catch {
       setActionError(t('common:operationFailed'))
@@ -124,7 +123,7 @@ export function NotificationInbox() {
                 {item.copy?.body && <span className="notification-preview">{item.copy.body}</span>}
                 {item.createdAt && <time className="workbench-row-detail" dateTime={new Date(item.createdAt).toISOString()}>{new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(item.createdAt)}</time>}
               </button>
-              <button type="button" className="workbench-icon mr-2 shrink-0" disabled={pending !== null} title={item.unread ? t('common:notification.markRead') : t('common:notification.markUnread')} aria-label={item.unread ? t('common:notification.markRead') : t('common:notification.markUnread')} onClick={() => void toggleRead(item)}>{item.unread ? <Check className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}</button>
+              <button type="button" className="workbench-icon mr-2 shrink-0" disabled={pending !== null} title={t('common:notification.markRead')} aria-label={t('common:notification.markRead')} onClick={() => void dismiss(item)}><Check className="h-3.5 w-3.5" /></button>
             </div>
           ))}
         </section>}

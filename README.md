@@ -1,151 +1,137 @@
 <div align="center">
 
-<img src="resources/icon.svg" alt="pi Desktop logo" width="80" height="80" />
+<img src="resources/icon.svg" alt="Pi-CodeLoom" width="80" height="80" />
 
-# pi Desktop
+# Pi-CodeLoom
 
-The desktop app for the [pi](https://github.com/jvm/pi-mono) coding agent — same agent you run in the terminal, now with a timeline, side panels, and a real window.
+让 AI 编程、项目文件与对话记录，汇聚在同一个桌面工作台。
 
-[![Version](https://img.shields.io/badge/version-0.5.4-blue?style=flat-square)](https://github.com/justhil/pi-app/releases/latest)
-[![Download](https://img.shields.io/github/v/release/justhil/pi-app?label=download&style=flat-square&logo=github)](https://github.com/justhil/pi-app/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](package.json)
-[![GitHub stars](https://img.shields.io/github/stars/justhil/pi-app?style=social)](https://github.com/justhil/pi-app/stargazers)
+**简体中文** · [English](./README.en.md)
 
-[简体中文](./README.zh-CN.md) · [Getting started](./doc/guide/getting-started.md) · [Adapters](./doc/guide/adapters.en.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![Electron](https://img.shields.io/badge/Electron-43-47848F?logo=electron)](https://www.electronjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+
+[下载与版本](https://github.com/by-guci/Pi-CodeLoom/releases) · [问题反馈](https://github.com/by-guci/Pi-CodeLoom/issues) · [上游项目](https://github.com/justhil/pi-app)
 
 </div>
 
-> [!NOTE]
-> pi Desktop is **not** a separate AI — it's a desktop shell around the pi SDK you already use. Your conversations, model logins, and extension settings live in the same `~/.pi/agent` files. Open a project and keep chatting from where you left off in the terminal.
+## 项目介绍
 
-![pi Desktop main window](https://img.justhil.uk/2026/06/25/image-20260625233744183)
+**Pi-CodeLoom 是基于 [justhil/pi-app](https://github.com/justhil/pi-app) 二次开发的开源 AI 编程助手桌面客户端。**
 
-## Why
+本项目为非官方衍生版本，沿用上游的 Electron 桌面架构与 pi 编码助手能力，在此基础上继续完善界面、配色、对话导航和日常使用体验。感谢原作者 **justhil**、pi 项目及社区贡献者的开源贡献。
 
-If you use pi in the terminal, you've probably wished for: a real diff view instead of scrolling raw output, the ability to queue a follow-up while the agent is still running, and a session tree you can click through instead of typing `/tree`. pi Desktop gives you all of that, plus native windows for extension pop-ups — **without forking pi or touching your installed extensions**.
+通过可配置的模型服务，Pi-CodeLoom 可以辅助阅读代码、修改文件、运行命令和查看变更。项目目录、历史会话、工具执行过程与文件预览都能在桌面界面中管理。
 
-## Features
+## 功能亮点
 
-- **Streaming timeline** — markdown, code blocks, KaTeX math, and foldable tool steps (read, edit, bash) with line-level diffs
-- **Session tree** — branch and rewind like `pi /tree`, but clickable; with git, optionally restore files on jump
-- **Composer** — inline file attachments, image paste, model & thinking-level pills, slash command menu; **Files** panel tree supports **drag files into composer** or right-click attach
-- **Workspace file preview** — multi-tab (`Ctrl`/`⌘`+click or right-click **Open in new tab**), line-gutter source view, **expand preview** into the chat column for wide reading
-- **Queue messages** — keep typing while the agent runs; messages execute when the current turn ends
-- **Full pi package ecosystem** — every extension you installed for terminal pi works here: dialogs, tool cards, side panels, and `/commands` are translated to native UI by per-extension **adapters**, with **no changes to the npm packages** (see [Extensions](#extensions))
-- **Bilingual UI** — 中文 / English toggle in Settings
-- **Voice input** — optional mic → local transcription via [codex-asr](https://github.com/Wangnov/codex-asr) (bundled binary, ChatGPT/Codex token auth)
-- **Shared everything** — sessions, auth, `settings.json`, extensions: all in `~/.pi/agent`, shared with CLI pi
+| 功能 | 说明 |
+| --- | --- |
+| 多模型与供应商配置 | 配置模型服务、切换可用模型，并选择模型支持的思考等级。 |
+| 项目与会话管理 | 打开本地项目，管理历史会话、临时对话、分支与会话树。 |
+| 动态对话大纲 | 左侧刻度始终居中；悬停预览提问和回复，点击定位对应轮次，滚动同步高亮。 |
+| 16 套内置配色 | 每套都包含浅色与深色版本，支持跟随系统、即时预览和自定义微调。 |
+| 流式回复与工具记录 | 展示 Markdown、代码、公式、思考过程和可折叠工具调用。 |
+| 文件与改动审查 | 文件树、多标签预览、附件拖入、代码差异和 Git 工作区信息。 |
+| 扩展与技能 | 使用 pi 扩展生态，并通过桌面适配器呈现受支持的交互和工具。 |
+| 通知与任务状态 | 完成提醒、通知收件箱、后台任务状态及相关设置。 |
+| 中英双语 | 应用界面可在中文和英文之间切换。 |
 
-## Get the app
+### 内置配色
 
-**Windows** — download the installer or portable build from [Releases](https://github.com/justhil/pi-app/releases/latest).
+在 **设置 → 外观 → 界面主题** 中选择，点击页面底部的 **保存** 保留设置。
 
-> [!TIP]
-> You need pi set up once on the machine (model login, the way you already use for terminal pi). After that, just open a project folder in pi Desktop and you're in.
+| | | | |
+| --- | --- | --- | --- |
+| Claude · 陶土 | Codex · 石墨 | 北境极光 | 玫瑰松月 |
+| 奶霜紫 | 东京霓夜 | 复古暖沙 | 黄铜纸页 |
+| 苔林木影 | 深海潮汐 | 翡翠薄雾 | 樱雪墨 |
+| 琥珀夜航 | 暮山烟紫 | 月白玄墨 | 青柠终端 |
 
-**Build from source** (developers):
+![16 套配色的浅色与深色预览](./doc/images/themes.png)
+
+## 安装与运行
+
+### 下载桌面版
+
+前往 [Releases](https://github.com/by-guci/Pi-CodeLoom/releases) 查看已发布的安装包。若暂时没有发布版本，可以按下面的方式从源码运行。
+
+Windows 打包配置包含安装版和便携版；仓库也保留了 macOS、Linux 的打包配置。可下载的平台和版本以 Releases 实际发布内容为准。
+
+### 从源码运行
+
+需要 **Node.js 22.19.0 或更高版本**（推荐 Node.js 22 LTS）、npm 和 Git。
 
 ```bash
-git clone https://github.com/justhil/pi-app.git
-cd pi-app
-npm install
+git clone https://github.com/by-guci/Pi-CodeLoom.git
+cd Pi-CodeLoom
+npm ci
 npm run dev
 ```
 
-## First steps
+`npm ci` 会执行项目的安装后步骤，包括原生依赖准备和构建。首次安装需要等待依赖下载完成。
 
-1. **Open a folder** — your repo becomes the agent's working directory (or use a sandbox under "chat partitions" to experiment safely).
-2. **Pick a session** — old chats from terminal pi show up here; or start fresh with `+`.
-3. **Send a message** — `Enter` to send, `Shift+Enter` for a new line.
-4. **Check the right panel** — review, run, context, session tree, or **Files** (tabbed preview + explorer; expand preview across the chat column).
-5. **Jump back** — hover a message and undo, or double-tap `Esc` with an empty input to open the session tree.
+开发模式退出时，退出应用并在终端按 `Ctrl+C`。若再次启动没有出现新窗口，请先通过托盘菜单退出仍在运行的旧实例。
 
-<img src="https://img.justhil.uk/2026/06/25/image-20260625234039591" alt="Conversation timeline" style="zoom:67%;" />
+### 首次配置
 
-## Shortcuts
+1. 在设置中确认 **Pi 运行环境**，按需使用内置、全局或独立环境。
+2. 在 **模型** 等设置页配置模型供应商、模型及所需凭证。应用本身不提供模型账号或调用额度。
+3. 打开一个项目文件夹，选择历史会话或新建对话。
+4. 在输入区选择模型，发送消息；通过右侧面板查看文件、工具执行和代码改动。
+5. 在 **外观** 中选择配色、明暗模式和图标风格。
 
-| Action | Keys |
-|--------|------|
-| Send | `Enter` |
-| New line | `Shift+Enter` |
-| Browse sent messages | `↑` / `↓` (empty input) |
-| Pull back queued message | `Alt+↑` |
-| Stop generation | `Esc` |
-| Session tree | `Esc` `Esc` (empty input) |
-| Commands | `/` |
-| Attach file | Drag, `+`, or `Ctrl+V`; **Files** panel — drag files onto composer (files only) |
-| Multi-tab preview | **Files** → `Ctrl`/`⌘`+click a file, or right-click **Open in new tab** |
-| Wide preview | **Files** toolbar **Expand preview** (fills chat column; click again to collapse) |
+已有的终端 pi 配置可以继续复用。pi 的模型认证、扩展和相关设置通常位于 `~/.pi/agent`；桌面偏好保存在 Electron 用户数据目录中。
 
-## Extensions
+## 键盘快捷键
 
-pi has a growing ecosystem of npm packages — subagents, image generation, search, hash-anchored edits, MCP servers, and more. pi Desktop makes all of them work on the desktop **without forking pi or patching the packages**.
+| 操作 | 快捷键或入口 |
+| --- | --- |
+| 发送消息 | `Enter` |
+| 换行 | `Shift+Enter` |
+| 停止生成 | `Esc` |
+| 打开会话树 | 输入为空时连续按两次 `Esc` |
+| 查看斜杠命令 | `/` |
+| 添加附件 | 拖入文件、点击 `+`，或粘贴图片 |
+| 对话大纲导航 | 聚焦刻度后使用 `↑`、`↓`、`Home`、`End`；`Enter` 跳转 |
+| 关闭大纲预览 | `Esc` 或移开鼠标 |
 
-### How it works
+## 构建与开发
 
-Each extension ships a terminal TUI (select, confirm, surveys, tool cards, `/commands`). pi Desktop ships a **compatibility layer** plus per-extension **adapters** — small JSON descriptions that map that TUI onto native windows, timeline cards, and settings forms. You install and enable extensions exactly as you do for terminal pi; pi Desktop renders them.
+```bash
+npm run typecheck     # TypeScript 类型检查
+npm run lint          # 代码检查
+npm run test:unit     # 单元与组件测试
+npm run test:scripts  # 脚本及约定检查
+npm run build         # 构建主进程、预加载脚本和界面
+npm run test:e2e      # 桌面端端到端测试，需要先完成 build
+npm run package:win   # 生成 Windows 安装版和便携版
+```
 
-### Install & enable
+打包产物输出到 `dist/`。在 macOS 或 Linux 上可使用 `npm run package` 按当前平台打包。若原生依赖出现 ABI 不匹配，可执行 `npm run rebuild:native` 后重新启动。
 
-1. Install in terminal pi: `pi install npm:<name>` or `pi install git:github.com/...`
-2. Enable in `~/.pi/agent/settings.json` → `packages`
-3. Open **Settings → Extensions** in pi Desktop to confirm tools are loaded for the current session
-4. If something's missing, **start a fresh session** after enabling the package
+技术栈：**Electron 43 · React 18 · TypeScript · Vite · Tailwind CSS · Zustand · i18next · pi SDK**。
 
-Extension pop-ups (questions, image approval, confirm dialogs) appear as native windows. Per-extension desktop options live under **Settings → Desktop adapters**. Advanced users can override builtin adapters with JSON in `~/.pi/desktop/adapters/`.
+## 文档与扩展
 
+- [中文操作指南](./doc/guide/getting-started.zh-CN.md)
+- [桌面适配器列表](./doc/guide/adapters.zh-CN.md)
+- [适配器编写指南](./doc/adapter-authoring-guide.md)
+- [开发与贡献说明](./doc/CONTRIBUTING.md)
 
-![Composer with model pills](https://img.justhil.uk/2026/06/25/image-20260625233933437)
+扩展的桌面交互支持程度取决于对应适配器，具体范围请查看适配器列表。新增模型、扩展或技能后，可能需要重新打开会话以载入配置。
 
-Full list of 34 built-in desktop adapters: [doc/guide/adapters.en.md](./doc/guide/adapters.en.md) · Author your own: [adapter-authoring-guide.md](./doc/adapter-authoring-guide.md)
+## 反馈与贡献
 
-## Voice input
+欢迎通过 [Issues](https://github.com/by-guci/Pi-CodeLoom/issues) 提交问题或建议，也欢迎提交 Pull Request。报告问题时请附上应用版本、操作系统、复现步骤和经过脱敏的日志。
 
-The composer mic records audio and transcribes it locally using [codex-asr](https://github.com/Wangnov/codex-asr). It's optional — typing always works without it.
+当前版本尚未接入应用内的新版本更新提醒或自动安装；请通过本仓库 Releases 查看后续版本。
 
-### Setup
+## 致谢与许可证
 
-Open **Settings → Voice**:
+- **[justhil/pi-app](https://github.com/justhil/pi-app)**：本项目直接基于其进行二次开发，感谢原作者提供的桌面客户端、扩展适配及相关基础能力。
+- **[pi](https://github.com/jvm/pi-mono)**：底层编码助手与扩展生态。
+- 感谢 React、Electron 及其他开源依赖的维护者和所有社区贡献者。
 
-- **Provider** — defaults to the **bundled `codex-asr serve`** binary (shipped in `resources/codex-asr/`); falls back to `codex-asr` on your `PATH`, or an external serve URL.
-- **Auth** — paste a ChatGPT/Codex `access_token`, or click **import from `~/.codex/auth.json`** (written by the [Codex CLI](https://github.com/openai/codex) or ChatGPT desktop after sign-in). Tokens are JWTs and expire — refresh by signing in again.
-- **Connectivity test** — a one-click check reports whether the serve process started and the token is valid.
-
-> [!TIP]
-> Easiest path: install the Codex CLI, run `codex login`, then in pi Desktop use **import from auth.json**. No manual token pasting needed.
-
-Bundled binaries come from [codex-asr releases](https://github.com/Wangnov/codex-asr/releases). If absent, the app falls back to any `codex-asr` found on your system `PATH`.
-
-## FAQ
-
-| Problem | Try this |
-|---------|----------|
-| Blank or frozen window after dev changes | Delete `node_modules/.vite`, run `npm run dev` again |
-| Extension listed in settings but not in chat | Enable it in pi `packages`, then **restart the session** |
-| Switching sessions feels slow at first | Only recent messages load immediately; the rest loads when you send or use the tree |
-| Voice doesn't work | Open Settings → Voice; check the token or run `codex login` to refresh — typing still works |
-| Closed an extension popup | Use **Continue** on the timeline |
-
-## Sponsor
-
-If pi Desktop has been useful to you, you can support its continued maintenance using the QR code below.
-
-<img src="doc/assets/sponsor-qr.png" alt="Sponsor QR code" width="320" />
-
-## Community
-
-Questions and feedback: **[LinuxDo](https://linux.do/)**
-
-If pi Desktop saves you from staring at a terminal all day, a **[star on GitHub](https://github.com/justhil/pi-app/stargazers)** helps others find it.
-
----
-
-<details>
-<summary>For developers & extension authors</summary>
-
-- User docs: [`doc/`](./doc/README.md) — getting started, adapter list, screenshots
-- Adapter authoring (for AI): [adapter-authoring-guide.md](./doc/adapter-authoring-guide.md)
-- Tech: Electron 35 · React 18 · TypeScript · Tailwind · shadcn · Zustand · i18next · `@earendil-works/pi-coding-agent`
-- Release: tag `v*` triggers `.github/workflows/release.yml` → Windows, macOS, Linux builds
-
-</details>
+本项目采用 [MIT License](./LICENSE)，保留上游版权声明。Pi-CodeLoom 为独立维护的非官方衍生项目，不代表上游项目的官方发行版。

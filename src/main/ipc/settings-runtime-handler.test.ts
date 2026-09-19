@@ -56,11 +56,6 @@ vi.mock('../session-preview-process', () => ({
   sessionPreviewProcess: { stop: mocks.stopPreview },
 }))
 
-vi.mock('../asr-config-store', () => ({
-  asrConfigForSettingsResponse: vi.fn((value) => value),
-  loadAsrConfig: vi.fn(() => ({})),
-  saveAsrConfig: vi.fn(),
-}))
 
 vi.mock('../window', () => ({ getMainWindow: vi.fn(() => null) }))
 vi.mock('electron', () => ({

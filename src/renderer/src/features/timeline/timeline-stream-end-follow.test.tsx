@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Timeline } from './timeline'
 import { useUIStore } from '@renderer/stores/ui-store'
 import { ipcClient } from '@renderer/lib/ipc-client'
@@ -71,6 +71,30 @@ beforeEach(() => {
   }
 })
 
+const originalResizeObserver = globalThis.ResizeObserver
+afterEach(() => { globalThis.ResizeObserver = originalResizeObserver })
+
+function mockContentResize(): (target: Element) => void {
+  const observers: { targets: Set<Element>; callback: () => void }[] = []
+  globalThis.ResizeObserver = class {
+    private record: { targets: Set<Element>; callback: () => void }
+
+    constructor(callback: ResizeObserverCallback) {
+      this.record = { targets: new Set(), callback: () => callback([], this) }
+      observers.push(this.record)
+    }
+
+    observe(target: Element) { this.record.targets.add(target) }
+    unobserve(target: Element) { this.record.targets.delete(target) }
+    disconnect() { this.record.targets.clear() }
+  }
+  return (target) => {
+    for (const observer of observers) {
+      if (observer.targets.has(target)) observer.callback()
+    }
+  }
+}
+
 async function flushRaf(times = 4): Promise<void> {
   for (let i = 0; i < times; i++) {
     await act(async () => {
@@ -89,6 +113,63 @@ function mockScrollPane(height = 6000, clientHeight = 800): HTMLElement {
 }
 
 describe('stream end + session switch-back follow behavior', () => {
+  it('keeps following the same streaming message after switching away and back', async () => {
+    const resize = mockContentResize()
+    const liveState = (sessionFile: string) => baseState({
+      historySessionFile: sessionFile,
+      timelineItems: diskChunk(TAIL_START, TOTAL - 1),
+      historyLoadedCount: TOTAL - TAIL_START,
+      streamingAssistantId: 'item-59',
+    })
+    useUIStore.setState(liveState('/tmp/proj/s.jsonl'))
+    render(<Timeline />)
+    const pane = mockScrollPane(6000, 800)
+    await flushRaf()
+
+    act(() => useUIStore.setState(liveState('/tmp/proj/other.jsonl')))
+    await flushRaf()
+    act(() => useUIStore.setState(liveState('/tmp/proj/s.jsonl')))
+    await flushRaf()
+
+    const content = pane.querySelector('.chat-content-column')!
+    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => 6400 })
+    act(() => {
+      useUIStore.getState().updateTimelineItem('item-59', { text: 'continued reply after switching back' })
+      resize(content)
+    })
+    await flushRaf()
+
+    expect(pane).toHaveTextContent('continued reply after switching back')
+    expect(pane.scrollTop).toBe(6400)
+  })
+
+  it('follows content loaded after a skeleton and detaches on an upward wheel gesture', async () => {
+    const resize = mockContentResize()
+    useUIStore.setState(baseState({ historyLoading: true }))
+    render(<Timeline />)
+    act(() => useUIStore.setState({
+      timelineItems: diskChunk(TAIL_START, TOTAL - 1),
+      historyLoadedCount: TOTAL - TAIL_START,
+      historyLoading: false,
+      streamingAssistantId: 'item-59',
+    }))
+    const pane = mockScrollPane(6000, 800)
+    const content = pane.querySelector('.chat-content-column')!
+    await flushRaf()
+
+    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => 6400 })
+    act(() => resize(content))
+    await flushRaf()
+    expect(pane.scrollTop).toBe(6400)
+
+    // The wheel intent must detach before the next native scroll event arrives.
+    fireEvent.wheel(pane, { deltaY: -80 })
+    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => 6800 })
+    act(() => resize(content))
+    await flushRaf()
+    expect(pane.scrollTop).toBe(6400)
+  })
+
   it('re-engages follow and pins to the latest when the stream ends while the user is near the bottom', async () => {
     // User watched history earlier (a view jump detached follow) but the viewport
     // is back at the bottom when the turn ends.

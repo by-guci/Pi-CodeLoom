@@ -8,6 +8,7 @@ import { st } from '../worker-runtime.js'
 import {
   applySkillOverrideChanges,
   getLiveWorkerSkillCatalog,
+  syncWorkerDiskSkillSettings,
   transferSkill,
   writeSkillDescription,
 } from '../worker-skill-resources.js'
@@ -133,6 +134,10 @@ export async function handleGetsessioncontextpreview(msg: WorkerIncomingMessage,
 
 export async function handleGetskillslist(msg: WorkerIncomingMessage, reply: WorkerReply): Promise<void> {
   try {
+    const synced = syncWorkerDiskSkillSettings()
+    if (synced && st.session) {
+      await (st.session as { reload?: () => Promise<void> }).reload?.()
+    }
     const live = getLiveWorkerSkillCatalog()
     const catalog: SkillCatalogResponse = {
       ...live,

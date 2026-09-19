@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
-import { isSkillPathEnabled } from '@shared/skill-catalog'
+import { canonicalSkillPath, isSkillPathEnabled } from '@shared/skill-catalog'
 import { skillStorageKey } from './pi-resources-editor'
 import { resolveActiveAgentDir, resolveActiveAgentSettingsFile } from './agent-dir'
 
@@ -74,6 +74,36 @@ export function applySkillOverridesBatch(
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   writeFileSync(globalSettingsFile(), JSON.stringify(settings, null, 2), 'utf-8')
   return overrides
+}
+
+/** 批量写入全局 settings：skills 列表（真实启用）与 desktopSkillOverrides（显式禁用），只落盘一次 */
+export function applyDiskSkillChanges(
+  changes: Array<{ name: string; path: string; enabled: boolean }>,
+): number {
+  if (changes.length === 0) return 0
+  const settings = readGlobalSettingsJson()
+  const overrides: DesktopSkillOverrides = { ...getDesktopSkillOverrides() }
+  const nextSkills = Array.isArray(settings.skills) ? settings.skills.map(String) : []
+  for (const { name, path, enabled } of changes) {
+    const canonical = canonicalSkillPath(path)
+    const key = skillStorageKey(name, path)
+    if (enabled) {
+      delete overrides[key]
+      delete overrides[skillStorageKey(name)]
+      if (!nextSkills.some((entry) => canonicalSkillPath(entry) === canonical)) nextSkills.push(path)
+    } else {
+      overrides[key] = false
+      const index = nextSkills.findIndex((entry) => canonicalSkillPath(entry) === canonical)
+      if (index >= 0) nextSkills.splice(index, 1)
+    }
+  }
+  settings.desktopSkillOverrides = overrides
+  if (nextSkills.length > 0) settings.skills = nextSkills
+  else delete settings.skills
+  const dir = resolveActiveAgentDir()
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  writeFileSync(globalSettingsFile(), JSON.stringify(settings, null, 2), 'utf-8')
+  return changes.length
 }
 
 /** 一次性：把旧版 electron-store skillOverrides 迁到全局 settings */

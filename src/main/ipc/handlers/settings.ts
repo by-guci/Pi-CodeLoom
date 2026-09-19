@@ -1,7 +1,6 @@
-import { shell, BrowserWindow } from 'electron'
-import type { AppUpdateAvailableInfo } from '@shared/app-update'
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
+import { BrowserWindow } from 'electron'
 import { configStore, type StoreSchema } from '../../config-store'
-import { asrConfigForSettingsResponse, loadAsrConfig, saveAsrConfig } from '../../asr-config-store'
 import { getMainWindow } from '../../window'
 import { invalidateAdapterCatalog } from '../../../extension-compat/adapter-loader'
 import { workerManager } from '../../worker-manager'
@@ -14,22 +13,13 @@ export function registerSettingsHandlers(): void {
   registerHandler('ipc:settings.get', async (req) => {
     if (req.key) {
       const key = req.key as keyof StoreSchema
-      if (key === 'asrConfig') {
-        return { settings: { asrConfig: asrConfigForSettingsResponse(loadAsrConfig()) } }
-      }
       return { settings: { [req.key]: configStore.get(key) } }
     }
-    const all = { ...configStore.getAll() }
-    all.asrConfig = asrConfigForSettingsResponse(loadAsrConfig())
-    return { settings: all }
+    return { settings: configStore.getAll() }
   })
 
   registerHandlerWithSchema('ipc:settings.set', settingsSetSchema, async (req) => {
     const key = req.key as keyof StoreSchema
-    if (key === 'asrConfig') {
-      saveAsrConfig(req.value as StoreSchema['asrConfig'])
-      return { key: req.key, value: asrConfigForSettingsResponse(loadAsrConfig()) }
-    }
     if (key === 'agentRuntime') {
       const current = configStore.get('agentRuntime')
       const next = req.value as StoreSchema['agentRuntime']
@@ -53,71 +43,6 @@ export function registerSettingsHandlers(): void {
     return { key: req.key, value: req.value }
   })
 
-  registerHandler('ipc:app.checkUpdate', async () => {
-    const { checkGitHubReleaseUpdate } = await import('../../github-release-check')
-
-    try {
-      const result = await checkGitHubReleaseUpdate()
-      if (!result.ok) return { status: 'error' }
-      if (!result.hasUpdate || !result.latestVersion) {
-        return {
-          status: 'up-to-date',
-          currentVersion: result.currentVersion,
-          latestVersion: result.latestVersion ?? result.currentVersion,
-        }
-      }
-
-      const update: AppUpdateAvailableInfo = {
-        currentVersion: result.currentVersion,
-        latestVersion: result.latestVersion.replace(/^v/i, ''),
-        releaseUrl: result.releaseUrl,
-        releaseNotes: result.releaseNotes,
-        downloadUrl: result.downloadUrl,
-        downloadName: result.downloadName,
-        assets: result.assets,
-      }
-      return { status: 'available', update }
-    } catch {
-      return { status: 'error' }
-    }
-  })
-
-  registerHandler('ipc:app.getPendingUpdate', async () => {
-    const { getPendingAppUpdate } = await import('../../updater')
-    return { update: getPendingAppUpdate() }
-  })
-
-  registerHandler('ipc:app.dismissUpdatePrompt', async () => {
-    const { clearPendingAppUpdate } = await import('../../updater')
-    clearPendingAppUpdate()
-    return { ok: true }
-  })
-
-  registerHandler('ipc:app.openRelease', async (req) => {
-    const slug = (process.env.PI_DESKTOP_GITHUB_REPO || 'justhil/pi-app').trim()
-    const url = (req.url && String(req.url).trim()) || `https://github.com/${slug}/releases`
-    await shell.openExternal(url)
-    return { ok: true }
-  })
-
-  registerHandler('ipc:app.ignoreUpdateVersion', async (req) => {
-    const version = String(req.version || '')
-      .trim()
-      .replace(/^v/i, '')
-    configStore.set('ignoredUpdateVersion', version)
-    const { clearPendingAppUpdate } = await import('../../updater')
-    clearPendingAppUpdate()
-    return { ok: true }
-  })
-
-  registerHandler('ipc:app.downloadUpdate', async (req) => {
-    const { downloadAndLaunchUpdate } = await import('../../app-update-download')
-    return downloadAndLaunchUpdate({
-      url: String(req.url || ''),
-      fileName: String(req.fileName || 'update.bin'),
-    })
-  })
-
   registerHandler('ipc:alerts.signal', async (req) => {
     const { traceAudio } = await import('../../audio-trace')
     traceAudio('ipc.alerts.signal', {
@@ -130,7 +55,7 @@ export function registerSettingsHandlers(): void {
     const kind = req.kind === 'run_idle' ? 'run_idle' : 'extension_ui'
     deliverDesktopAlert(win, {
       kind,
-      title: String(req.title || 'pi Desktop'),
+      title: String(req.title || APP_DISPLAY_NAME),
       body: String(req.body || ''),
       background: req.background === true,
     })

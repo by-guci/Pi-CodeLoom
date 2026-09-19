@@ -1,4 +1,5 @@
 import { app, powerSaveBlocker, dialog } from 'electron'
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { registerHandler, registerHandlerWithSchema } from '../registry'
 import { z } from 'zod'
 import { workspacePathsEqual } from '@shared/workspace-path'
@@ -77,7 +78,15 @@ export function registerDesktopChromeHandlers(): void {
     return { ok: !r.canceled, path: r.filePaths[0] }
   })
 
-  registerHandler('ipc:desktop.appName', async () => ({ name: app.getName(), version: app.getVersion() }))
+  registerHandler('ipc:desktop.appName', async () => ({
+    name: APP_DISPLAY_NAME,
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+    platform: process.platform,
+    arch: process.arch,
+  }))
 
   registerHandler('ipc:desktop.setBadge', async (req) => {
     const n = Number(req.count) || 0

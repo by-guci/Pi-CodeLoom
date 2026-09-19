@@ -1,5 +1,5 @@
 appId: com.pi.desktop
-productName: pi Desktop
+productName: Pi-CodeLoom
 directories:
   buildResources: build
   output: dist
@@ -28,13 +28,6 @@ extraFiles:
     to: resources/build/icon.png
   - from: build/icon.ico
     to: resources/build/icon.ico
-
-# 可选：运行 scripts/fetch-codex-asr 后放入 resources/codex-asr；缺失时回退 PATH 中的 codex-asr
-extraResources:
-  - from: resources/codex-asr
-    to: codex-asr
-    filter:
-      - "**/*"
 
 win:
   target:
@@ -82,4 +75,6 @@ linux:
 
 publish:
   provider: github
+  owner: by-guci
+  repo: Pi-CodeLoom
   releaseType: release

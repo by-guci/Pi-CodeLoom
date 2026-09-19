@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const workerState = vi.hoisted(() => ({ hasActiveTurns: false }))
+const windowState = vi.hoisted(() => ({ missing: false }))
 
 const appMock = vi.hoisted(() => ({ on: vi.fn(), quit: vi.fn() }))
 
@@ -17,6 +18,10 @@ vi.mock('./worker-manager', () => ({
       return workerState.hasActiveTurns
     },
   },
+}))
+
+vi.mock('./window', () => ({
+  getMainWindow: () => windowState.missing ? null : winMock.instance,
 }))
 
 const winMock = vi.hoisted(() => {
@@ -52,6 +57,7 @@ describe('window-close-guard', () => {
   beforeEach(() => {
     __resetWindowCloseGuardForTest()
     workerState.hasActiveTurns = false
+    windowState.missing = false
     appMock.on.mockReset()
     appMock.quit.mockReset()
     winMock.instance.on.mockReset()
@@ -197,6 +203,15 @@ describe('window-close-guard', () => {
   })
 
   describe('guardAppQuit (tray Quit / Cmd+Q)', () => {
+    it('allows graceful quit when there is no main window to show a decision', () => {
+      workerState.hasActiveTurns = true
+      windowState.missing = true
+      const e = makeEvent()
+      expect(guardAppQuit(e)).toBe(true)
+      expect(e.preventDefault).not.toHaveBeenCalled()
+      expect(winMock.instance.webContents.send).not.toHaveBeenCalled()
+    })
+
     it('allows quit when no turn is running', () => {
       const e = makeEvent()
       expect(guardAppQuit(e)).toBe(true)

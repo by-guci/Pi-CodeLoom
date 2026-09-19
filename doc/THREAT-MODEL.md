@@ -1,4 +1,4 @@
-# pi Desktop — 渲染进程威胁模型（摘要）
+# Pi-CodeLoom — 渲染进程威胁模型（摘要）
 
 ## 配置
 
@@ -41,11 +41,6 @@ npm run test:e2e
 
 - 默认改为 `sandbox: true` 前需在 Win/macOS/Linux 全矩阵通过 `test:e2e` 与手工附件/Worker 冒烟。
 - 正式威胁模型评审后更新本文件与 FMSM Security 评分。
-
-## Codex token 存储（2026-07-01）
-
-- 用户设置的 `codexAccessToken` 经 Electron `safeStorage` 加密，键 `codexAccessTokenEnc`；**不**写入 `asrConfig` 明文 JSON。
-- 启动/读取设置时 `loadAsrConfig()` 会迁移历史明文 token 并擦除 store 内字段。
 
 ## 发布门禁（iter14）
 

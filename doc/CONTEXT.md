@@ -42,7 +42,7 @@ Renderer `piDesktop.onEvent` ← Main `sendEvent(win, AppEvent)` ← Worker。
 ## 安全默认值
 
 - `src/main/window.ts`：`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` 默认（`PI_RENDERER_SANDBOX=0` 可关；见 `doc/THREAT-MODEL.md`）
-- Codex JWT：`src/main/secret-store.ts` + `asr-config-store.ts`（safeStorage，明文迁移）
+- 历史语音和远程更新设置会在启动时从桌面配置中清理，不影响 Pi 或 Codex CLI 配置。
 
 ## 质量门禁
 

@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { toast } from 'sonner'
 import { onExtensionUIRequest, onExtensionUIDismiss } from '@renderer/lib/ipc-client'
 import { useExtensionUIStore, type ExtensionUIPending } from '@renderer/stores/extension-ui-store'
@@ -178,7 +179,7 @@ export function ensureExtensionUIChannel(): void {
     // Desktop alert only when running (idle dialog doesn't need system notification)
     if (useUIStore.getState().runState.status === 'running') {
       void signalDesktopAlert('extension_ui', {
-        title: 'pi Desktop · 等待操作',
+        title: `${APP_DISPLAY_NAME} · 等待操作`,
         body,
       })
     }

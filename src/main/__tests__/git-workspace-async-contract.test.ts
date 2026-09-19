@@ -15,6 +15,6 @@ describe('read-only git snapshot owner', () => {
     expect(source).toContain('export async function readGitWorkspaceSnapshot')
     expect(source).toContain('function gitExecSync(')
     expect(source).toContain("gitExecSync(cwd, ['apply'")
-    expect(handler).toContain('await readGitWorkspaceSnapshot(cwd)')
+    expect(handler).toContain('await readGitWorkspaceSnapshot(cwd.cwd)')
   })
 })

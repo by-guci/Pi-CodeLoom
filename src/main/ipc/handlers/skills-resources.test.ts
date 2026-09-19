@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+type DiskSkillRow = {
+  name: string
+  description: string
+  path: string
+  source: string
+  fileKind: string
+}
 
 const mocks = vi.hoisted(() => ({
   handlers: new Map<string, (request: Record<string, unknown>) => Promise<unknown>>(),
@@ -10,7 +18,9 @@ const mocks = vi.hoisted(() => ({
   applySkillOverrides: vi.fn(),
   writeSkillDescription: vi.fn(),
   transferSkill: vi.fn(),
+  applyDiskSkillChanges: vi.fn(() => 1),
   start: vi.fn(),
+  listSkillsOnDisk: vi.fn<() => DiskSkillRow[]>(() => []),
   listAgentsContextFiles: vi.fn(() => []),
   listPiBuiltinPromptFiles: vi.fn(() => []),
   listPluginInjectedPromptFiles: vi.fn(() => []),
@@ -19,6 +29,7 @@ const mocks = vi.hoisted(() => ({
     isRunning: false,
     cwd: '',
   },
+  currentProject: 'C:/repo' as string | null,
 }))
 
 vi.mock('../registry', () => ({
@@ -41,7 +52,7 @@ vi.mock('../../worker-manager', () => ({
 vi.mock('../../config-store', () => ({
   configStore: {
     get: vi.fn((key: string) => {
-      if (key === 'currentProject') return 'C:/repo'
+      if (key === 'currentProject') return mocks.currentProject
       if (key === 'skillPresentation') return {}
       return undefined
     }),
@@ -57,7 +68,7 @@ vi.mock('../../pi-agent-settings-read', () => ({
   readPiProjectSettingsFromDisk: vi.fn(() => ({ skills: ['.pi/skills/project-skill'] })),
 }))
 vi.mock('../../pi-resources-editor', () => ({
-  listSkillsOnDisk: vi.fn(() => []),
+  listSkillsOnDisk: mocks.listSkillsOnDisk,
   listPromptsOnDisk: mocks.listPromptsOnDisk,
   readTextFileSafe: vi.fn(),
   writeTextFileSafe: vi.fn(),
@@ -68,6 +79,7 @@ vi.mock('../../pi-skill-overrides', () => ({
   isSkillEnabled: vi.fn(() => true),
   setSkillEnabledInGlobal: vi.fn(() => ({})),
   applySkillOverridesBatch: vi.fn(),
+  applyDiskSkillChanges: mocks.applyDiskSkillChanges,
   migrateElectronSkillOverrides: vi.fn(),
 }))
 vi.mock('../../pi-prompt-catalog', () => ({
@@ -97,6 +109,7 @@ describe('system prompt resource preview', () => {
     mocks.applySkillOverrides.mockReset()
     mocks.writeSkillDescription.mockReset()
     mocks.transferSkill.mockReset()
+    mocks.applyDiskSkillChanges.mockReset().mockReturnValue(1)
     mocks.start.mockReset()
     mocks.listAgentsContextFiles.mockClear()
     mocks.listPiBuiltinPromptFiles.mockClear()
@@ -104,6 +117,8 @@ describe('system prompt resource preview', () => {
     mocks.listPromptsOnDisk.mockClear()
     mocks.workerManager.isRunning = false
     mocks.workerManager.cwd = ''
+    mocks.currentProject = 'C:/repo'
+    mocks.listSkillsOnDisk.mockClear().mockReturnValue([])
     registerSkillsResourceHandlers()
   })
 
@@ -190,6 +205,146 @@ describe('system prompt resource preview', () => {
     expect(mocks.start).toHaveBeenCalledWith('C:/repo')
     expect(mocks.getSkillsList).toHaveBeenCalled()
     expect(result.skills?.[0]?.name).toBe('review')
+  })
+
+  it('lists global user skills from disk even when no project is open', async () => {
+    mocks.currentProject = null
+    mocks.listSkillsOnDisk.mockReturnValue([{
+      name: 'review',
+      description: 'Review code',
+      path: 'C:/Users/u/.pi/agent/skills/review/SKILL.md',
+      source: 'global',
+      fileKind: 'skill-md',
+    }])
+    const handler = mocks.handlers.get('ipc:skills.list')
+
+    const result = await handler?.({}) as { complete?: boolean; skills?: Array<{ name?: string; enabled?: boolean }> }
+
+    expect(result.complete).toBe(true)
+    expect(result.skills?.[0]?.name).toBe('review')
+    expect(result.skills?.[0]?.enabled).toBe(true)
+    expect(mocks.start).not.toHaveBeenCalled()
+  })
+
+  it('applies disk skill changes from the main process when no worker is running', async () => {
+    mocks.workerManager.isRunning = false
+    mocks.listSkillsOnDisk.mockReturnValue([{
+      name: 'review',
+      description: 'Review code',
+      path: 'C:/Users/u/.pi/agent/skills/review/SKILL.md',
+      source: 'global',
+      fileKind: 'skill-md',
+    }])
+    const handler = mocks.handlers.get('ipc:skills.applyOverrides')
+
+    const result = await handler?.({
+      changes: [{ key: 'host|C:/Users/u/.pi/agent/skills/review/SKILL.md|local', enabled: false }],
+    }) as { ok?: boolean; count?: number }
+
+    expect(result).toEqual({ ok: true, count: 1 })
+    expect(mocks.applyDiskSkillChanges).toHaveBeenCalledWith([
+      { name: 'review', path: 'C:/Users/u/.pi/agent/skills/review/SKILL.md', enabled: false },
+    ])
+  })
+
+  it('waits for the worker skill catalog to become complete before answering', async () => {
+    vi.useFakeTimers()
+    try {
+      mocks.workerManager.isRunning = true
+      mocks.getSkillsList
+        .mockResolvedValueOnce({
+          complete: false,
+          projectTrusted: false,
+          effectiveSkills: [],
+          candidates: [],
+        })
+        .mockResolvedValueOnce({
+          complete: true,
+          projectTrusted: true,
+          effectiveSkills: [],
+          candidates: [{
+            key: 'host|/skills/review/SKILL.md|local',
+            runtimeId: 'host',
+            name: 'review',
+            description: 'Review',
+            filePath: 'C:/repo/.pi/skills/review/SKILL.md',
+            source: 'local',
+            scope: 'project',
+            origin: 'top-level',
+            enabled: true,
+            effective: true,
+            shadowed: false,
+            command: '/skill:review',
+            editable: true,
+            movable: true,
+            canCopyToUser: true,
+            canCopyToProject: false,
+          }],
+        })
+      const handler = mocks.handlers.get('ipc:skills.list')
+      const promise = handler?.({}) as Promise<{ complete?: boolean; skills?: Array<{ name?: string }> }>
+
+      await vi.advanceTimersByTimeAsync(110)
+      const result = await promise
+
+      expect(mocks.getSkillsList).toHaveBeenCalledTimes(2)
+      expect(result.complete).toBe(true)
+      expect(result.skills?.[0]?.name).toBe('review')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('returns the last incomplete catalog after the readiness wait expires', async () => {
+    vi.useFakeTimers()
+    try {
+      mocks.workerManager.isRunning = true
+      mocks.getSkillsList.mockResolvedValue({
+        complete: false,
+        projectTrusted: false,
+        effectiveSkills: [],
+        candidates: [],
+      })
+      const handler = mocks.handlers.get('ipc:skills.list')
+      const promise = handler?.({}) as Promise<{ complete?: boolean }>
+
+      await vi.advanceTimersByTimeAsync(3000)
+      const result = await promise
+
+      expect(result.complete).toBe(false)
+      expect(mocks.getSkillsList.mock.calls.length).toBeGreaterThan(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('retries a rejecting skill list RPC while the worker boots', async () => {
+    vi.useFakeTimers()
+    try {
+      mocks.workerManager.isRunning = true
+      mocks.getSkillsList
+        .mockRejectedValueOnce(new Error('worker not ready'))
+        .mockResolvedValueOnce({
+          complete: true,
+          projectTrusted: true,
+          effectiveSkills: [],
+          candidates: [],
+        })
+      const handler = mocks.handlers.get('ipc:skills.list')
+      const promise = handler?.({}) as Promise<{ complete?: boolean }>
+
+      await vi.advanceTimersByTimeAsync(110)
+      const result = await promise
+
+      expect(mocks.getSkillsList).toHaveBeenCalledTimes(2)
+      expect(result.complete).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('authorizes skill mutations by opaque catalog key and reports reload failures', async () => {

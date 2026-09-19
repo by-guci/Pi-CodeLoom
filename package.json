@@ -1,10 +1,18 @@
 {
   "name": "pi-desktop",
-  "version": "0.5.8",
-  "description": "pi Desktop - 桌面端 AI Agent GUI",
+  "version": "1.0.7",
+  "description": "Pi-CodeLoom - 桌面端 AI Agent GUI",
   "main": "./out/main/index.js",
   "author": "pi-desktop",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/by-guci/Pi-CodeLoom.git"
+  },
+  "homepage": "https://github.com/by-guci/Pi-CodeLoom#readme",
+  "bugs": {
+    "url": "https://github.com/by-guci/Pi-CodeLoom/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.19.0"

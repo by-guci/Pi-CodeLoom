@@ -37,6 +37,8 @@ export function PiSettingsPanel() {
     { v: 'medium', l: t('settings:pi.thinkingMedium') },
     { v: 'high', l: t('settings:pi.thinkingHigh') },
     { v: 'xhigh', l: t('settings:pi.thinkingXhigh') },
+    { v: 'max', l: t('settings:pi.thinkingMax') },
+    { v: 'ultra', l: t('settings:pi.thinkingUltra') },
   ]
   const [info, setInfo] = useState<PiInfo | null>(null)
   const [settings, setSettings] = useState<PiSettingsSnapshot | null>(null)
@@ -51,12 +53,15 @@ export function PiSettingsPanel() {
   const [registry, setRegistry] = useState<{ versions: string[]; latest: string | null } | null>(null)
   const [selectedVersion, setSelectedVersion] = useState('')
   const [installing, setInstalling] = useState(false)
+  const [upgradingGlobal, setUpgradingGlobal] = useState(false)
+  const [globalUpgradeResult, setGlobalUpgradeResult] = useState<{ ok: boolean; text: string } | null>(null)
   const [installOutput, setInstallOutput] = useState<string[]>([])
   const [switching, setSwitching] = useState(false)
   const [envTarget, setEnvTarget] = useState<'builtin' | 'global' | 'user'>('builtin')
   const currentWorkspace = useUIStore((s) => s.currentWorkspace)
   const { draft: settingsDraft } = useSettingsDraft()
-  const isWslRuntime = settingsDraft?.agentRuntime?.mode === 'wsl' && !!settingsDraft?.agentRuntime?.distro
+  const runtime = sdkStatus?.runtime ?? settingsDraft?.agentRuntime
+  const isWslRuntime = runtime?.mode === 'wsl' && !!runtime?.distro
 
   const loadModelsForDropdown = useCallback(async () => {
     try {
@@ -156,6 +161,37 @@ export function PiSettingsPanel() {
       setInstalling(false)
     }
   }, [loadModelsForDropdown, reloadSdk, selectedVersion, t])
+
+  const onUpgradeGlobal = useCallback(async () => {
+    if (!selectedVersion) return
+    setUpgradingGlobal(true)
+    setGlobalUpgradeResult(null)
+    setInstallOutput([])
+    try {
+      const result = await ipcClient.invoke('sdk.upgradeGlobal', { version: selectedVersion })
+      if (result?.ok !== true || !result.version) {
+        throw new Error(result?.error || t('settings:pi.globalUpgradeFailed'))
+      }
+      const message = t('settings:pi.globalUpgradeSuccess', { version: result.version })
+      const text = result.restartRequired
+        ? `${message} ${t('settings:pi.globalUpgradeRestartRequired')}`
+        : message
+      setGlobalUpgradeResult({ ok: true, text })
+      setSdkStatus((current) => current ? { ...current, globalVersion: result.version } : current)
+      try {
+        await reloadSdk({ refresh: true })
+      } catch (error) {
+        console.error('sdk refresh after global upgrade failed', error)
+      }
+      toast.success(message)
+    } catch (error) {
+      const text = error instanceof Error ? error.message : t('settings:pi.globalUpgradeFailed')
+      setGlobalUpgradeResult({ ok: false, text })
+      toast.error(text)
+    } finally {
+      setUpgradingGlobal(false)
+    }
+  }, [reloadSdk, selectedVersion, t])
 
   const onSwitchEnv = useCallback(
     async (target: 'builtin' | 'global' | 'user') => {
@@ -271,10 +307,13 @@ export function PiSettingsPanel() {
           selectedVersion={selectedVersion}
           setSelectedVersion={setSelectedVersion}
           installing={installing}
+          upgradingGlobal={upgradingGlobal}
+          globalUpgradeResult={globalUpgradeResult}
           switching={switching}
           installOutput={installOutput}
           onSwitchEnv={onSwitchEnv}
           onInstall={onInstall}
+          onUpgradeGlobal={onUpgradeGlobal}
           isWslRuntime={isWslRuntime}
         />
         {ui && <PiSettingsEnvAuthRows info={info} ui={ui} />}

@@ -1,4 +1,4 @@
-// 设置页控件类的唯一来源：pi / models / voice 各页共用，勿在页面内重新声明。
+// 设置页控件类的唯一来源：pi / models 各页共用，勿在页面内重新声明。
 
 export const inputCls =
   'settings-field-focus w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm font-mono'

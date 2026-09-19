@@ -33,7 +33,7 @@ function firstToken(input: string): string | null {
 
 export { firstToken }
 
-const THINKING_ORDER = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh']
+const THINKING_ORDER = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']
 
 /**
  * Execute an app-native slash command. Returns true if handled (caller clears input).

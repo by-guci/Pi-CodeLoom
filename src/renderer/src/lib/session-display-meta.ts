@@ -3,12 +3,15 @@ import { ipcClient } from '@renderer/lib/ipc-client'
 import { useUIStore } from '@renderer/stores/ui-store'
 import { normalizeModelKey, normalizeThinkingLevel } from '@renderer/lib/format-run-display'
 import { isViewingWorkerBoundSession } from '@renderer/lib/session-worker-sync'
+import { workspacePathKey } from '@shared/workspace-path'
 
 export type SessionDisplayMeta = {
   model?: string
   thinkingLevel?: string
   modelFallbackMessage?: string
 }
+
+let composerMetaRequestSeq = 0
 
 /** 从 pi 全局 settings 读取默认模型 / thinking（Worker 未绑会话时也能显示） */
 export async function fetchPiDefaultDisplayMeta(): Promise<SessionDisplayMeta> {
@@ -63,20 +66,29 @@ export function applyWorkerBoundModelDisplay(result: {
  */
 export async function applyComposerDisplayMeta(meta?: SessionDisplayMeta | null): Promise<void> {
   const store = useUIStore.getState()
+  const requestSeq = ++composerMetaRequestSeq
   const patch: SessionDisplayMeta = {}
 
   const previewFile = store.historySessionFile
-  let workerBoundToView = !previewFile
+  const isCurrent = () => {
+    const current = useUIStore.getState()
+    return requestSeq === composerMetaRequestSeq &&
+      workspacePathKey(current.currentWorkspace) === workspacePathKey(store.currentWorkspace) &&
+      (previewFile
+        ? isViewingWorkerBoundSession(previewFile, current.historySessionFile)
+        : !current.historySessionFile && current.currentSessionId === store.currentSessionId)
+  }
+  // Blank new chats have no session file — leftover Worker state is not this view.
+  let workerBoundToView = false
   let workerModel: string | undefined
   let workerThinking: string | undefined
 
   try {
     const res = await ipcClient.invoke('ipc:runtime.getState', {})
+    if (!isCurrent()) return
     const st = res?.state as { sessionFile?: string; model?: string; thinkingLevel?: string } | null
     if (previewFile) {
       workerBoundToView = isViewingWorkerBoundSession(previewFile, st?.sessionFile)
-    } else if (st?.sessionFile) {
-      workerBoundToView = true
     }
     if (workerBoundToView && st) {
       workerModel = normalizeModelKey(st.model)
@@ -128,6 +140,7 @@ export async function applyComposerDisplayMeta(meta?: SessionDisplayMeta | null)
     normalizeThinkingLevel(cur.thinkingLevel) ??
     'off'
 
+  if (!isCurrent()) return
   store.setRunState({
     model: finalModel,
     thinkingLevel: finalThink,

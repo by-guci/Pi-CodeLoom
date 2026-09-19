@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { app, BrowserWindow } from 'electron'
 import { configStore } from './config-store'
 import { traceAudio } from './audio-trace'
@@ -80,7 +81,7 @@ export function deliverDesktopAlert(win: BrowserWindow | null, payload: DesktopA
         ...copy,
         title: payload.title || copy.title,
         body: payload.body || copy.body,
-        projectLabel: 'pi Desktop',
+        projectLabel: APP_DISPLAY_NAME,
         openLabel: language === 'zh' ? '返回应用' : 'Back to app',
       },
     },

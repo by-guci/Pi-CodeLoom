@@ -174,8 +174,7 @@ const MarkdownView = memo(function MarkdownView({
     [streaming, usePlainStream, committedPrefix],
   )
 
-  const components = useMemo(
-    () => ({
+  const components = {
       code: ({ className: cn2, children: ch, ...rest }: ComponentPropsWithoutRef<'code'>) => {
         const lang = /language-(\w+)/.exec(cn2 || '')?.[1]?.toLowerCase() || ''
         const raw = String(ch ?? '').replace(/\n$/, '')
@@ -253,9 +252,7 @@ const MarkdownView = memo(function MarkdownView({
         return <p className="my-1 leading-relaxed">{ch}</p>
       },
       hr: () => <hr className="my-3 border-border/35" />,
-    }),
-    [streaming],
-  )
+  }
 
   if (usePlainStream) {
     return (

@@ -9,7 +9,7 @@ import { getAgentRuntimeConfig } from './wsl/runtime-config'
 
 /** Active workspace root for capability-bound IPC (git mutations, image preview). */
 export function getTrustedWorkspaceRoot(): string | null {
-  const raw = workerManager.cwd || configStore.get('currentProject')
+  const raw = configStore.get('currentProject') || workerManager.cwd
   const t = typeof raw === 'string' ? raw.trim() : ''
   return t || null
 }
@@ -20,7 +20,7 @@ export function authorizeTrustedCwd(reqCwd: string | undefined): { ok: true; cwd
   if (!reqCwd || !String(reqCwd).trim()) return { ok: true, cwd: trusted }
   const a = resolve(trusted)
   const b = resolve(String(reqCwd).trim())
-  if (a !== b) return { ok: false, error: 'cwd_not_trusted' }
+  if (!workspacePathsEqual(a, b)) return { ok: false, error: 'cwd_not_trusted' }
   return { ok: true, cwd: trusted }
 }
 
@@ -49,6 +49,7 @@ function resolveTrustedSessionCwd(reqCwd: string | undefined): { ok: true; cwd: 
   if (!target) return authorizeTrustedCwd(reqCwd)
   const trusted = [
     getTrustedWorkspaceRoot(),
+    workerManager.cwd,
     ...(configStore.get('recentProjects') || []),
   ].find((workspace) => workspace && workspacePathsEqual(workspace, target))
   if (trusted) return { ok: true, cwd: trusted }

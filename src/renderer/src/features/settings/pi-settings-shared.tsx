@@ -12,6 +12,7 @@ export type SdkStatus = {
   globalVersion?: string
   userVersion?: string
   npmAvailable?: boolean
+  runtime?: { mode: 'host' | 'wsl'; distro?: string | null }
   workerFallback?: boolean
   active?: { version?: string; kind?: 'builtin' | 'global' | 'user'; fallbackReason?: string }
 }

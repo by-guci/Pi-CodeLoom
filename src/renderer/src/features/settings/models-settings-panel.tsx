@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import { Boxes, Plus, RefreshCw } from '@renderer/components/icons'
@@ -17,7 +17,7 @@ import {
 } from '@renderer/features/settings/model-provider-presets'
 import { ManualModelAddDialog } from '@renderer/features/settings/manual-model-add-dialog'
 import type { LocalModelEntry } from '@renderer/features/settings/model-entry-editor'
-import { btnOutline, btnPrimary, cloneConfig, configEqual, defaultModelEntry, ProviderAvatar } from './models-settings-shared'
+import { applyLookupSpec, btnOutline, btnPrimary, cloneConfig, configEqual, defaultModelEntry, ProviderAvatar } from './models-settings-shared'
 import { ModelsProviderCard } from './models-provider-card'
 import { ModelsSdkProviderSection } from './models-sdk-provider-section'
 import { saveModelsConfigDraft } from './save-models-config'
@@ -48,7 +48,10 @@ export function ModelsSettingsPanel() {
     onConfirm: () => void
   } | null>(null)
 
-  const load = useCallback(async () => {
+  const dirtyRef = useRef(false)
+  dirtyRef.current = !configEqual(draft, baseline)
+
+  const load = useCallback(async (preserveDraft = false) => {
     const res = await ipcClient.invoke('pi.models.get', {})
     setFilePath(res?.path || '')
     setParseError(res?.parseError || null)
@@ -58,8 +61,10 @@ export function ModelsSettingsPanel() {
     const snapshot = await ipcClient.invoke('model.list', { scope: 'settings' }).catch(() => ({ models: [] }))
     setSettingsModels(snapshot?.models || [])
     const cfg = res?.config ?? { providers: {} }
-    setBaseline(cloneConfig(cfg))
-    setDraft(cloneConfig(cfg))
+    if (!preserveDraft || !dirtyRef.current) {
+      setBaseline(cloneConfig(cfg))
+      setDraft(cloneConfig(cfg))
+    }
     const keys = Object.keys(cfg.providers || {})
     setExpanded((prev) => {
       const next = { ...prev }
@@ -70,13 +75,13 @@ export function ModelsSettingsPanel() {
 
   useEffect(() => {
     setLoading(true)
-    void load()
+    void load(true)
       .catch((e: unknown) => {
         toast.error((e instanceof Error ? e.message : String(e)) || t('models.loadFailedToast'))
       })
       .finally(() => setLoading(false))
     return onAppEvent((event) => {
-      if (event.type === 'sdk-runtime-changed') void load()
+      if (event.type === 'sdk-runtime-changed') void load(true)
     })
   }, [load, t])
 
@@ -211,6 +216,27 @@ export function ModelsSettingsPanel() {
     }
   }
 
+  const fillModelsFromCatalog = useCallback(async (providerId: string, ids: string[]) => {
+    if (!ids.length) return 0
+    try {
+      const res = await ipcClient.invoke('pi.models.lookup', { ids })
+      const specs = res?.ok ? res.models : undefined
+      if (!specs || !Object.keys(specs).length) return 0
+      patchDraft((c) => {
+        const prov = c.providers[providerId]
+        if (!prov) return
+        prov.models = (prov.models || []).map((m) => {
+          const spec = specs[m.id]
+          return spec ? applyLookupSpec(m, spec) : m
+        })
+      })
+      return Object.keys(specs).length
+    } catch (error) {
+      console.error('[models.lookup]', error)
+      return 0
+    }
+  }, [patchDraft])
+
   const addModelToLocal = (providerId: string, modelId: string) => {
     if ((draft?.providers[providerId].models || []).some((m) => m.id === modelId)) return
     patchDraft((c) => {
@@ -220,6 +246,7 @@ export function ModelsSettingsPanel() {
     const key = `${providerId}\0${modelId}`
     setExpandedLocalModel((e) => ({ ...e, [key]: true }))
     toast.success(t('models.addedModelToast', { id: modelId }))
+    void fillModelsFromCatalog(providerId, [modelId])
   }
 
   const addAllNewToLocal = (providerId: string) => {
@@ -235,6 +262,7 @@ export function ModelsSettingsPanel() {
       prov.models = [...(prov.models || []), ...toAdd.map((id) => defaultModelEntry(id))]
     })
     toast.success(t('models.addedModels', { count: toAdd.length }))
+    void fillModelsFromCatalog(providerId, toAdd)
   }
 
   const removeModel = (providerId: string, modelId: string) => {
@@ -417,6 +445,10 @@ export function ModelsSettingsPanel() {
                   }
                   onAddModel={(id) => addModelToLocal(pid, id)}
                   onAddAllNew={() => addAllNewToLocal(pid)}
+                  onFillModel={(modelId) => void fillModelsFromCatalog(pid, [modelId]).then((n) => {
+                    if (n) toast.success(t('models.lookupFilled', { id: modelId }))
+                    else toast.message(t('models.lookupMiss', { id: modelId }))
+                  })}
                   onUpdateModel={(modelId, patch) => updateModelEntry(pid, modelId, patch)}
                   onRemoveModel={(modelId) => removeModel(pid, modelId)}
                 />

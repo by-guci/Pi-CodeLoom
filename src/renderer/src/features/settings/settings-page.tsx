@@ -4,8 +4,8 @@ import { ipcClient } from '@renderer/lib/ipc-client'
 import { useUIStore } from '@renderer/stores/ui-store'
 import { ExtensionConfigSubpage } from '@renderer/features/extension-ui/extension-config-subpage'
 import { ModelsSettingsPanel } from '@renderer/features/settings/models-settings-panel'
-import { SlidersHorizontal, Palette, Cpu, Puzzle, Zap, MessageSquareText, Mic,
-  Cable, ChevronLeft, LayoutPanelLeft, Boxes, Search, X, type AppIconComponent
+import { SlidersHorizontal, Palette, Cpu, Puzzle, Zap, MessageSquareText,
+  Cable, ChevronLeft, LayoutPanelLeft, Boxes, Search, X, MessageCircleQuestion, type AppIconComponent
 } from '@renderer/components/icons'
 import { SkillsSettingsPanel } from '@renderer/features/settings/skills-settings-panel'
 import { PromptsSettingsPanel } from '@renderer/features/settings/prompts-settings-panel'
@@ -16,16 +16,16 @@ import {
   SettingsNavItem,
 } from '@renderer/features/settings/settings-shell'
 import { RightPanelsSettings } from '@renderer/features/settings/right-panels-settings'
-import { VoiceSettingsPanel } from '@renderer/features/settings/voice-settings-panel'
 import { SettingsDraftProvider } from '@renderer/features/settings/settings-draft-context'
 import { SettingsSaveBar } from '@renderer/features/settings/settings-save-bar'
 import { invalidateRightPanelCatalog } from '@renderer/lib/right-panel-runtime'
 import { GeneralSettings, AppearanceSettings, PiSettings } from '@renderer/features/settings/settings-general-appearance'
+import { AboutSettings } from '@renderer/features/settings/about-settings'
 import { ExtensionsSettings } from '@renderer/features/settings/settings-extensions-panel'
 import { SettingsSearchContext } from './settings-page-shared'
 import { AdaptersSettings } from '@renderer/features/settings/settings-adapters-panel'
 
-type SettingsPage = 'general' | 'appearance' | 'rightPanels' | 'pi' | 'models' | 'skills' | 'prompts' | 'extensions' | 'adapters' | 'voice'
+type SettingsPage = 'general' | 'appearance' | 'rightPanels' | 'pi' | 'models' | 'skills' | 'prompts' | 'extensions' | 'adapters' | 'about'
 
 type NavGroup = { key: string; labelKey: string; pages: { key: SettingsPage; icon: AppIconComponent }[] }
 
@@ -37,6 +37,7 @@ const NAV_GROUPS: NavGroup[] = [
       { key: 'general', icon: SlidersHorizontal },
       { key: 'appearance', icon: Palette },
       { key: 'rightPanels', icon: LayoutPanelLeft },
+      { key: 'about', icon: MessageCircleQuestion },
     ],
   },
   {
@@ -45,7 +46,6 @@ const NAV_GROUPS: NavGroup[] = [
     pages: [
       { key: 'pi', icon: Cpu },
       { key: 'models', icon: Boxes },
-      { key: 'voice', icon: Mic },
     ],
   },
   {
@@ -60,15 +60,20 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-const WIDE_PAGES: SettingsPage[] = ['rightPanels', 'pi', 'models', 'skills', 'prompts', 'extensions', 'adapters', 'voice']
+const WIDE_PAGES: SettingsPage[] = ['rightPanels', 'pi', 'models', 'skills', 'prompts', 'extensions', 'adapters']
 
 export function SettingsPage() {
   const { t } = useTranslation()
   const [page, setPage] = useState<SettingsPage>('general')
+  const [modelsVisited, setModelsVisited] = useState(false)
   const [settingsQuery, setSettingsQuery] = useState('')
   const [configExt, setConfigExt] = useState<string | null>(null)
   const pendingExtensionConfig = useUIStore((s) => s.pendingExtensionConfig)
   const requestExtensionConfig = useUIStore((s) => s.requestExtensionConfig)
+
+  useEffect(() => {
+    if (page === 'models') setModelsVisited(true)
+  }, [page])
 
   // 外置 adapter.json 可能在设置外被修改；进入设置时刷新 Main 缓存与右栏目录
   useEffect(() => {
@@ -129,7 +134,7 @@ export function SettingsPage() {
           ))}
         </SettingsNav>
 
-        {configExt ? (
+        {configExt && (
           // 适配器配置子页：仍不进草稿、不挂保存栏，仅在主区替换内容
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <div className="flex shrink-0 items-center gap-2 border-b border-border/60 bg-[var(--bg-base)] px-4 py-2.5">
@@ -149,8 +154,8 @@ export function SettingsPage() {
               </div>
             </SettingsMain>
           </div>
-        ) : (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        )}
+          <div className={configExt ? 'hidden' : 'flex min-h-0 min-w-0 flex-1 flex-col'}>
             {settingsQuery.trim() && <div className="settings-search-summary flex shrink-0 items-center justify-between gap-3 border-b border-border/40 px-5 py-2 text-xs text-foreground-secondary"><span role="status">{t('settings:searchResults', { count: pages.length })}</span><button type="button" className="workbench-button" onClick={() => setSettingsQuery('')}>{t('common:sidebar.clearSearch')}</button></div>}
           <SettingsMain wide={wide} footer={<SettingsSaveBar wide={wide} />}>
             {pages.length === 0 ? <div className="workbench-empty"><Search className="h-6 w-6 opacity-50" /><p>{t('settings:noSearchResults')}</p><span>{t('settings:searchHint')}</span></div> : <>
@@ -158,16 +163,19 @@ export function SettingsPage() {
             {page === 'appearance' && <AppearanceSettings />}
             {page === 'rightPanels' && <RightPanelsSettings />}
             {page === 'pi' && <PiSettings />}
-            {page === 'models' && <ModelsSettingsPanel />}
             {page === 'skills' && <SkillsSettingsPanel />}
             {page === 'prompts' && <PromptsSettingsPanel />}
             {page === 'extensions' && <ExtensionsSettings />}
             {page === 'adapters' && <AdaptersSettings />}
-            {page === 'voice' && <VoiceSettingsPanel />}
+            {page === 'about' && <AboutSettings />}
             </>}
+            {(modelsVisited || page === 'models') && (
+              <div hidden={page !== 'models' || pages.length === 0}>
+                <ModelsSettingsPanel />
+              </div>
+            )}
           </SettingsMain>
           </div>
-        )}
       </div>
       </SettingsSearchContext.Provider>
     </SettingsDraftProvider>

@@ -147,13 +147,15 @@ function untrackedPatch(cwd: string, relPath: string): string {
   if (buf.includes(0)) return ''
   const text = buf.toString('utf8')
   const lines = text.split('\n')
+  if (lines[lines.length - 1] === '') lines.pop()
   return [
     `diff --git a/${relPath} b/${relPath}`,
     'new file mode 100644',
     '--- /dev/null',
     `+++ b/${relPath}`,
-    `@@ -0,0 +1,${Math.max(lines.length, 1)} @@`,
+    `@@ -0,0 +${lines.length ? 1 : 0},${lines.length} @@`,
     ...lines.map((line) => `+${line}`),
+    ...(text && !text.endsWith('\n') ? ['\\ No newline at end of file'] : []),
     '',
   ].join('\n')
 }

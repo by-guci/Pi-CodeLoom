@@ -139,6 +139,7 @@ export function parseGitDiff(raw: string): DiffFile[] {
       const oldStart = parseInt(hm[1], 10)
       const newStart = parseInt(hm[2], 10)
       const hunkLines: DiffLine[] = [{ type: 'hunk-header', content: hl }]
+      const patchStart = i
       i++
       let oldLn = oldStart
       let newLn = newStart
@@ -157,11 +158,7 @@ export function parseGitDiff(raw: string): DiffFile[] {
         }
         i++
       }
-      const patch = headText + '\n' + hl + '\n' + hunkLines.slice(1).map((d) => {
-        if (d.type === 'added') return '+' + d.content
-        if (d.type === 'removed') return '-' + d.content
-        return ' ' + d.content
-      }).join('\n') + '\n'
+      const patch = headText + '\n' + lines.slice(patchStart, i).join('\n') + '\n'
       hunks.push({ oldStart, oldEnd: oldLn - 1, newStart, newEnd: newLn - 1, lines: hunkLines, patch })
     }
     const additions = hunks.reduce((n, h) => n + h.lines.filter((l) => l.type === 'added').length, 0)

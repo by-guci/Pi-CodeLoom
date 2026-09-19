@@ -1,10 +1,12 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@renderer/stores/ui-store'
 import { ChevronRight, Folder, FolderOpen, Inbox, Plus, RefreshCw, Search, X } from '@renderer/components/icons'
+import { toast } from 'sonner'
 import { ipcClient } from '@renderer/lib/ipc-client'
 import { activateWorkspace } from '@renderer/lib/activate-workspace'
 import { SidebarAnimatedCollapse } from '@renderer/components/ui/sidebar-animated-collapse'
+import { OverlayScrollHost } from '@renderer/components/ui/overlay-scrollbar'
 import { SandboxContextMenuPortal } from './sandbox-context-menu'
 import { useSandboxContextMenu } from './use-sandbox-context-menu'
 import { SessionContextMenuPortal } from './session-context-menu'
@@ -28,13 +30,26 @@ import { useProjectWorktrees } from './use-project-worktrees'
 import { uniqueWorkspacePaths, workspacePathKey, workspacePathsEqual } from '@shared/workspace-path'
 import type { GitWorktree } from '@shared/git-worktree'
 
+/** 拖入项目的条目可能是文件夹也可能是文件：解析出真实磁盘路径。 */
+function droppedFilePath(file: File): string | undefined {
+  try {
+    const p = window.piDesktop?.getPathForFile(file)
+    if (p) return p
+  } catch {
+    /* 剪贴板来源没有磁盘路径 */
+  }
+  return (file as File & { path?: string }).path
+}
+
 export function ProjectSidebar({
   onOpenProject,
   openProjectLabel,
+  footer,
 }: {
   onOpenProject: () => void
   openProjectLabel: string
-}) {
+  footer?: React.ReactNode
+} ) {
   const { t } = useTranslation()
   const collapsed = useUIStore((s) => s.sidebarCollapsed)
   const currentWorkspace = useUIStore((s) => s.currentWorkspace)
@@ -55,6 +70,7 @@ export function ProjectSidebar({
   const [sectionOpen, setSectionOpen] = useState(true)
   const [sessionQuery, setSessionQuery] = useState('')
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const dropDepth = useRef(0)
   const [sessionScope, setSessionScope] = useState<'project' | 'all'>('project')
   const scopeLabel = t(sessionScope === 'project' ? 'common:sidebar.thisProject' : 'common:sidebar.allProjects')
   const searchActive = sessionQuery.trim().length > 0
@@ -278,6 +294,56 @@ export function ProjectSidebar({
     }
   }
 
+  const openDroppedFolders = useCallback(
+    async (files: File[]) => {
+      for (const file of files) {
+        const path = droppedFilePath(file)
+        if (!path) continue
+        try {
+          const stat = await ipcClient.invoke('workspace.fs.stat', { path })
+          if (stat?.ok && stat.isDirectory) {
+            await activateWorkspace(path, { preferHome: true })
+            return
+          }
+        } catch (e) {
+          console.error('[ProjectSidebar] drop folder resolve failed:', e)
+        }
+      }
+      toast.error(t('common:sidebar.dropFolderOnly'))
+    },
+    [t],
+  )
+
+  const handleProjectDragEnter = useCallback((e: React.DragEvent) => {
+    const dt = e.dataTransfer
+    if (!dt?.types?.includes('Files')) return
+    e.preventDefault()
+    dropDepth.current += 1
+  }, [])
+
+  const handleProjectDragOver = useCallback((e: React.DragEvent) => {
+    const dt = e.dataTransfer
+    if (!dt?.types?.includes('Files')) return
+    e.preventDefault()
+    dt.dropEffect = 'copy'
+  }, [])
+
+  const handleProjectDragLeave = useCallback((e: React.DragEvent) => {
+    const dt = e.dataTransfer
+    if (!dt?.types?.includes('Files')) return
+    e.preventDefault()
+    dropDepth.current -= 1
+    if (dropDepth.current <= 0) dropDepth.current = 0
+  }, [])
+
+  const handleProjectDrop = useCallback((e: React.DragEvent) => {
+    const dt = e.dataTransfer
+    if (!dt?.types?.includes('Files')) return
+    e.preventDefault()
+    dropDepth.current = 0
+    void openDroppedFolders(Array.from(dt.files || []))
+  }, [openDroppedFolders])
+
   const handleNewSandboxDialog = () => {
     enterBlankSession('ephemeral-sandbox')
     void import('@renderer/lib/composer-run-display').then((m) => m.refreshComposerRunDisplay())
@@ -389,7 +455,7 @@ export function ProjectSidebar({
 
   if (collapsed) {
     return (
-      <div className="flex flex-col items-center gap-1 py-1">
+      <div className="relative flex flex-col items-center gap-1 py-1" onDragEnter={handleProjectDragEnter} onDragOver={handleProjectDragOver} onDragLeave={handleProjectDragLeave} onDrop={handleProjectDrop}>
         <button
           type="button"
           onClick={() => void handleNewSandboxDialog()}
@@ -411,7 +477,8 @@ export function ProjectSidebar({
   }
 
   return (
-    <div className="flex flex-col pb-1">
+    <div className="relative flex min-h-0 flex-1 flex-col pb-1" onDragEnter={handleProjectDragEnter} onDragOver={handleProjectDragOver} onDragLeave={handleProjectDragLeave} onDrop={handleProjectDrop}>
+      <OverlayScrollHost className="sidebar-scroll-host min-h-0 flex-1" scrollClassName="py-1" showRailOnHostHover>
       <div className="sidebar-search-block border-b border-border/40 px-3 py-3">
         <button
           type="button"
@@ -554,6 +621,8 @@ export function ProjectSidebar({
           })
         )}
       </div>
+      </OverlayScrollHost>
+      {footer}
     </div>
   )
 }

@@ -1,17 +1,22 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { app, BrowserWindow, Menu, Tray } from 'electron'
 import { resolveAppIcon } from './app-icon'
 import { configStore } from './config-store'
+import { getMainWindow } from './window'
 
 let appTray: Tray | null = null
 
 function currentWindow(): BrowserWindow | undefined {
-  const window = BrowserWindow.getAllWindows()[0]
+  const window = getMainWindow()
   return window && !window.isDestroyed() ? window : undefined
 }
 
 export function focusMainWindow(): void {
   const window = currentWindow()
-  if (!window) return
+  if (!window) {
+    app.emit('activate')
+    return
+  }
   if (window.isMinimized()) window.restore()
   if (!window.isVisible()) window.show()
   window.focus()
@@ -43,8 +48,9 @@ export function ensureAppTray(platform = process.platform): Tray | null {
   }
 
   appTray = new Tray(icon)
-  appTray.setToolTip('pi Desktop')
+  appTray.setToolTip(APP_DISPLAY_NAME)
   appTray.on('click', focusMainWindow)
+  appTray.on('double-click', focusMainWindow)
   appTray.on('right-click', openTrayMenu)
   return appTray
 }

@@ -3,7 +3,7 @@ import { reviewMutationSchema } from '../schemas'
 import { workerManager } from '../../worker-manager'
 import { configStore } from '../../config-store'
 import { readGitWorkspaceSnapshot, stageHunks, unstageHunks, commitChanges } from '../../git-workspace'
-import { authorizeTrustedCwd, getTrustedWorkspaceRoot } from '../../trusted-workspace'
+import { authorizeTrustedCwd } from '../../trusted-workspace'
 
 function reviewMutationCwd(reqCwd?: string): { ok: true; cwd: string } | { ok: false; error: string } {
   return authorizeTrustedCwd(reqCwd)
@@ -11,9 +11,10 @@ function reviewMutationCwd(reqCwd?: string): { ok: true; cwd: string } | { ok: f
 
 export function registerReviewHandlers(): void {
   registerHandler('ipc:review.getDiff', async (req) => {
-    const cwd = getTrustedWorkspaceRoot() || process.cwd()
     if (req.scope === 'git') {
-      const snap = await readGitWorkspaceSnapshot(cwd)
+      const cwd = authorizeTrustedCwd(req.cwd)
+      if (!cwd.ok) return { diff: { raw: '', stagedRaw: '', status: '', scope: 'git', isRepo: true, error: cwd.error } }
+      const snap = await readGitWorkspaceSnapshot(cwd.cwd)
       return {
         diff: {
           raw: snap.raw,

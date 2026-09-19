@@ -66,7 +66,6 @@ test('composer default and focused states keep layered edge elevation', () => {
     assert.match(rule, /--composer-shell-shadow:/)
     assert.match(rule, /--composer-shell-shadow-hover:/)
     assert.match(rule, /--composer-shell-shadow-focus:/)
-    assert.match(rule, /--composer-shell-shadow-recording:/)
     assert.match(rule, /--composer-shell-shadow-hero:/)
     assert.match(rule, /--composer-shell-shadow-hero-focus:/)
     assert.match(rule, /inset\s+0\s+1px\s+0/)
@@ -86,14 +85,10 @@ test('composer default and focused states keep layered edge elevation', () => {
   }
 })
 
-test('voice and hero variants preserve composer elevation without a wide halo', () => {
-  const recordingRule = cssRule('.composer-shell--voice-recording')
-  const transcribingRule = cssRule('.composer-shell--voice-transcribing')
+test('hero variant preserves composer elevation without a wide halo', () => {
   const heroRule = cssRule('.composer-dock-hero .composer-shell')
   const heroFocusRule = cssRule('.composer-dock-hero .composer-shell-focused')
 
-  assert.match(recordingRule, /box-shadow:\s*var\(--composer-shell-shadow-recording\)/)
-  assert.match(transcribingRule, /box-shadow:\s*var\(--composer-shell-shadow\)/)
   assert.match(heroRule, /box-shadow:\s*var\(--composer-shell-shadow-hero\)/)
   assert.match(heroFocusRule, /box-shadow:\s*var\(--composer-shell-shadow-hero-focus\)/)
   assert.doesNotMatch(heroFocusRule, /0\s+0\s+0\s+3px|halo/)

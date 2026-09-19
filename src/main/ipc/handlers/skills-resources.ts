@@ -4,11 +4,12 @@ import { registerHandler } from '../registry'
 import { workerManager } from '../../worker-manager'
 import { configStore } from '../../config-store'
 import {
+  listSkillsOnDisk,
   listPromptsOnDisk,
   readTextFileSafe,
   writeTextFileSafe,
 } from '../../pi-resources-editor'
-import { migrateElectronSkillOverrides } from '../../pi-skill-overrides'
+import { applyDiskSkillChanges, migrateElectronSkillOverrides } from '../../pi-skill-overrides'
 import {
   listAgentsContextFiles,
   listPiBuiltinPromptFiles,
@@ -22,10 +23,69 @@ import type { ResourceSource } from '../../pi-resources-editor'
 import { errorMessage } from '@shared/error-message'
 import { normalizeSessionKey } from '../../worker-session-key'
 import { sessionPreviewProcess } from '../../session-preview-process'
+import { canonicalSkillPath, skillCatalogKey, type SkillCandidate } from '@shared/skill-catalog'
 import {
   readPiAgentGlobalSettingsFromDisk,
   readPiProjectSettingsFromDisk,
 } from '../../pi-agent-settings-read'
+
+const SKILL_CATALOG_READY_TIMEOUT_MS = 2500
+const SKILL_CATALOG_READY_POLL_MS = 100
+
+async function fetchReadySkillCatalog(): Promise<Awaited<ReturnType<typeof workerManager.getSkillsList>>> {
+  const deadline = Date.now() + SKILL_CATALOG_READY_TIMEOUT_MS
+  let last: Awaited<ReturnType<typeof workerManager.getSkillsList>> | null = null
+  for (;;) {
+    try {
+      const catalog = await workerManager.getSkillsList()
+      last = catalog
+      if (catalog.complete !== false) return catalog
+    } catch {
+      // Worker RPC can reject while the resource loader is still booting; keep polling.
+    }
+    if (Date.now() >= deadline) {
+      return last ?? { complete: false, projectTrusted: false, effectiveSkills: [], candidates: [] }
+    }
+    await new Promise((resolve) => setTimeout(resolve, SKILL_CATALOG_READY_POLL_MS))
+  }
+}
+
+function diskSkillCandidates(
+  rows: ReturnType<typeof listSkillsOnDisk>,
+  presentation: Record<string, { alias?: string; icon?: string }>,
+): SkillCandidate[] {
+  const settings = readPiAgentGlobalSettingsFromDisk() || {}
+  const overrides =
+    settings.desktopSkillOverrides && typeof settings.desktopSkillOverrides === 'object'
+      ? settings.desktopSkillOverrides as Record<string, unknown>
+      : {}
+  return rows.map((row) => {
+    const scope = row.source === 'project' ? 'project' : 'user'
+    const key = skillCatalogKey({ runtimeId: 'host', filePath: row.path, source: 'local' })
+    const pathKey = canonicalSkillPath(row.path)
+    return {
+      runtimeId: 'host',
+      name: row.name,
+      filePath: row.path,
+      source: 'local',
+      scope,
+      origin: 'top-level',
+      key,
+      description: row.description,
+      enabled: overrides[`path:${pathKey}`] !== false && overrides[`path:${row.path}`] !== false,
+      effective: false,
+      shadowed: false,
+      command: `/skill:${row.name}`,
+      editable: true,
+      movable: true,
+      canCopyToUser: scope !== 'user',
+      canCopyToProject: scope !== 'project',
+      diagnostics: [],
+      alias: presentation[key]?.alias,
+      icon: presentation[key]?.icon,
+    }
+  })
+}
 
 export function registerSkillsResourceHandlers(): void {
   registerHandler('ipc:skills.list', async () => {
@@ -34,9 +94,20 @@ export function registerSkillsResourceHandlers(): void {
       migrateElectronSkillOverrides(legacy)
       configStore.set('skillOverrides', {})
     }
+    const presentation = configStore.get('skillPresentation') || {}
     const cwd = configStore.get('currentProject')
     if (!cwd) {
-      return { complete: false, projectTrusted: false, effectiveSkills: [], candidates: [], skills: [] }
+      const candidates = diskSkillCandidates(listSkillsOnDisk(process.cwd()), presentation).map((candidate) => ({
+        ...candidate,
+        path: candidate.filePath,
+      }))
+      return {
+        complete: true,
+        projectTrusted: true,
+        effectiveSkills: [],
+        candidates,
+        skills: candidates,
+      }
     }
     if (
       !workerManager.isRunning ||
@@ -44,8 +115,7 @@ export function registerSkillsResourceHandlers(): void {
     ) {
       await workerManager.start(cwd)
     }
-    const catalog = await workerManager.getSkillsList()
-    const presentation = configStore.get('skillPresentation') || {}
+    const catalog = await fetchReadySkillCatalog()
     const candidates = catalog.candidates.map((candidate) => ({
       ...candidate,
       path: candidate.filePath,
@@ -57,7 +127,20 @@ export function registerSkillsResourceHandlers(): void {
 
   registerHandler('ipc:skills.setEnabled', async (req) => {
     const key = String(req.key || '')
-    if (!key || !workerManager.isRunning) return { ok: false, error: 'SKILL_RUNTIME_NOT_READY' }
+    if (!key) return { ok: false, error: 'SKILL_RUNTIME_NOT_READY' }
+    if (!workerManager.isRunning) {
+      try {
+        const disk = listSkillsOnDisk(process.cwd())
+        const row = disk.find(
+          (item) => skillCatalogKey({ runtimeId: 'host', filePath: item.path, source: 'local' }) === key,
+        )
+        if (!row) return { ok: false, error: 'SKILL_NOT_FOUND' }
+        applyDiskSkillChanges([{ name: row.name, path: row.path, enabled: req.enabled !== false }])
+        return { ok: true, count: 1 }
+      } catch (error) {
+        return { ok: false, error: errorMessage(error) }
+      }
+    }
     try {
       const count = await workerManager.applySkillOverrides([{ key, enabled: req.enabled !== false }])
       await workerManager.reloadResources()
@@ -68,13 +151,34 @@ export function registerSkillsResourceHandlers(): void {
   })
 
   registerHandler('ipc:skills.applyOverrides', async (req) => {
-    const changes = Array.isArray(req?.changes)
-      ? req.changes.map((change: { key?: unknown; enabled?: unknown }) => ({
+    const changes: Array<{ key: string; enabled: boolean }> = Array.isArray(req?.changes)
+      ? (req.changes as Array<{ key?: unknown; enabled?: unknown }>).map((change) => ({
           key: String(change.key || ''),
           enabled: change.enabled !== false,
-        })).filter((change: { key: string }) => change.key)
+        })).filter((change) => Boolean(change.key))
       : []
-    if (!workerManager.isRunning) return { ok: false, error: 'SKILL_RUNTIME_NOT_READY' }
+    if (!workerManager.isRunning) {
+      try {
+        const disk = listSkillsOnDisk(process.cwd())
+        const byKey = new Map(
+          disk.map((item) => [
+            skillCatalogKey({ runtimeId: 'host', filePath: item.path, source: 'local' }),
+            item,
+          ]),
+        )
+        const resolved = changes
+          .map((change) => {
+            const row = byKey.get(change.key)
+            return row ? { name: row.name, path: row.path, enabled: change.enabled } : null
+          })
+          .filter((row): row is { name: string; path: string; enabled: boolean } => row !== null)
+        if (resolved.length !== changes.length) return { ok: false, error: 'SKILL_NOT_FOUND' }
+        const count = applyDiskSkillChanges(resolved)
+        return { ok: true, count }
+      } catch (error) {
+        return { ok: false, error: errorMessage(error) }
+      }
+    }
     try {
       const count = await workerManager.applySkillOverrides(changes)
       await workerManager.reloadResources()

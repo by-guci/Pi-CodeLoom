@@ -1,7 +1,7 @@
-# pi Desktop 扩展适配器编写指南（兼容层 v2）
+# Pi-CodeLoom 扩展适配器编写指南（兼容层 v2）
 
 > **读者**：人类开发者，或任意 AI 助手。  
-> **目标**：为 **pi npm 扩展**（`@earendil-works/pi-coding-agent` 的 extension 包）编写 **`adapter.json`**，使 **pi Desktop**（Electron GUI）在不改扩展源码的前提下，提供配置页、时间线工具卡、弹窗交互、斜杠命令语义、右栏面板等桌面能力。  
+> **目标**：为 **pi npm 扩展**（`@earendil-works/pi-coding-agent` 的 extension 包）编写 **`adapter.json`**，使 **Pi-CodeLoom**（Electron GUI）在不改扩展源码的前提下，提供配置页、时间线工具卡、弹窗交互、斜杠命令语义、右栏面板等桌面能力。  
 > **原则**：扩展仍按 pi SDK 注册 tools/commands/TUI；桌面通过 **声明式 JSON + 通用原语** 桥接，**禁止**在桌面 App 里为单个插件写 `if (pluginId === '...')` 或专用 IPC channel。  
 > **外置覆盖内置**：`~/.pi/desktop/adapters` 或项目 `.pi/desktop/adapters` 可按 **`match.names` 包名** 整份替换 App 内置适配器，详见 **§1**。
 
@@ -10,7 +10,7 @@
 ## 0. 一分钟心智模型
 
 ```
-pi 扩展 (npm)                    pi Desktop App
+pi 扩展 (npm)                    Pi-CodeLoom App
 ─────────────────                ─────────────────────────────
 registerTool / registerCommand   adapter.json 声明 match
 ExtensionUIContext (TUI)    →    通用弹窗 Host（§8，全插件复用）
@@ -34,7 +34,7 @@ ExtensionUIContext (TUI)    →    通用弹窗 Host（§8，全插件复用）
 
 ## 1. 适配器加载与外部覆盖内置
 
-pi Desktop 在启动与切换工作区时调用 `loadAdapterCatalog(projectDir)`，合并三层来源得到最终 catalog。扩展作者可在 **不等 App 发版** 的情况下，用外置 JSON **替换** 应用内置的同名扩展适配器（例如扩展 v2 新增 tool、改 config 路径、升级 `tier`）。
+Pi-CodeLoom 在启动与切换工作区时调用 `loadAdapterCatalog(projectDir)`，合并三层来源得到最终 catalog。扩展作者可在 **不等 App 发版** 的情况下，用外置 JSON **替换** 应用内置的同名扩展适配器（例如扩展 v2 新增 tool、改 config 路径、升级 `tier`）。
 
 ### 2.1 三层来源与优先级
 
@@ -574,7 +574,7 @@ Renderer 使用 `ipcClient.invoke('<method>', req)`，内部 channel 为 `ipc:<m
 | `adapter.sidePanel.getState` | `{ adapterId, workspaceId? }` | `{ ok, state }` 或 `{ ok: false, error }` |
 | `rightPanels.catalog` | — | `{ catalog, adapterPanels, prefs, defaultPrefs }` |
 
-扩展 **运行时** 不直接调这些 IPC；由 **pi Desktop UI** 调用。适配器 JSON 决定 UI 如何展示扩展行为。
+扩展 **运行时** 不直接调这些 IPC；由 **Pi-CodeLoom UI** 调用。适配器 JSON 决定 UI 如何展示扩展行为。
 
 ---
 

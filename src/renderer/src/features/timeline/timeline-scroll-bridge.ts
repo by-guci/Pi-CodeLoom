@@ -37,8 +37,8 @@ export function scrollTimelineToRatio(ratio: number): void {
   const max = scrollEl.scrollHeight - scrollEl.clientHeight
   if (max <= 0) return
   scrollEl.scrollTop = Math.max(0, Math.min(1, ratio)) * max
+  notifyTimelineScroll()
 }
-
 /** 中间列空白区滚轮：rAF 合并 delta，减少布局抖动 */
 export function scrollTimelineByDelta(deltaY: number): boolean {
   if (!scrollEl || deltaY === 0) return false

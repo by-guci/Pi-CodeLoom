@@ -1,3 +1,5 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
+
 /** Sandboxed notification host. No nodeIntegration; talks only via preload action ids. */
 export function notificationHostPageHtml(): string {
   return `<!doctype html>
@@ -5,7 +7,7 @@ export function notificationHostPageHtml(): string {
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; media-src 'none'" />
-  <title>pi Desktop</title>
+  <title>${APP_DISPLAY_NAME}</title>
   <style>
     :root {
       color-scheme: light dark;

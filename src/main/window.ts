@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
@@ -88,7 +89,7 @@ export function createWindow(): BrowserWindow {
     ...(isMac && useFrameless
       ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 10 } }
       : {}),
-    title: 'pi Desktop',
+    title: APP_DISPLAY_NAME,
     icon: resolveAppIcon(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
@@ -98,10 +99,15 @@ export function createWindow(): BrowserWindow {
       nodeIntegration: false,
     },
   })
+  const createdWindow = mainWindow
 
-  installWindowCloseGuard(mainWindow)
+  createdWindow.on('closed', () => {
+    if (mainWindow === createdWindow) mainWindow = null
+  })
 
-  mainWindow.on('ready-to-show', () => {
+  installWindowCloseGuard(createdWindow)
+
+  createdWindow.on('ready-to-show', () => {
     if (isE2eTestMode()) {
       mainWindow?.show()
     } else if (is.dev) {
@@ -114,45 +120,45 @@ export function createWindow(): BrowserWindow {
   // Production: skip per-line renderer console forwarding (idle/poll noise).
   // Dev and e2e keep full forwarding for diagnostics.
   if (is.dev || isE2eTestMode()) {
-    mainWindow.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+    createdWindow.webContents.on('console-message', (_e, level, message, line, sourceId) => {
       console.log(`[Renderer:${level}] ${message} (${sourceId}:${line})`)
     })
   }
 
-  mainWindow.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
+  createdWindow.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
     console.error(`[Renderer] Failed to load: ${errorCode} ${errorDescription} URL: ${validatedURL}`)
   })
 
-  mainWindow.webContents.on('render-process-gone', (_e, details) => {
+  createdWindow.webContents.on('render-process-gone', (_e, details) => {
     console.error(`[Renderer] Process gone: ${details.reason} exitCode=${details.exitCode}`)
     if (details.reason === 'crashed' || details.reason === 'killed' || details.reason === 'oom') {
       void workerManager.stop()
-      if (!rendererReloadAfterCrash && mainWindow && !mainWindow.isDestroyed()) {
+      if (!rendererReloadAfterCrash && !createdWindow.isDestroyed()) {
         rendererReloadAfterCrash = true
         console.error('[Renderer] Reloading once after crash')
-        mainWindow.webContents.reload()
+        createdWindow.webContents.reload()
       }
     }
   })
 
-  mainWindow.webContents.on('unresponsive', () => {
+  createdWindow.webContents.on('unresponsive', () => {
     console.error('[Renderer] Unresponsive')
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  createdWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  attachWindowBoundsPersistence(mainWindow)
+  attachWindowBoundsPersistence(createdWindow)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    createdWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    createdWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  return mainWindow
+  return createdWindow
 }
 
 export function getMainWindow(): BrowserWindow | null {
@@ -160,8 +166,9 @@ export function getMainWindow(): BrowserWindow | null {
 }
 
 export function destroyWindow(): void {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.close()
+  const window = mainWindow
+  if (window && !window.isDestroyed()) {
+    window.close()
   }
-  mainWindow = null
+  if (mainWindow === window && window?.isDestroyed()) mainWindow = null
 }

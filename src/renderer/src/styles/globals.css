@@ -91,11 +91,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.96),
       0 1px 2px rgba(18, 24, 40, 0.1),
       0 14px 34px rgba(18, 24, 40, 0.14);
-    --composer-shell-shadow-recording:
-      0 0 0 1px color-mix(in srgb, var(--brand) 16%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.96),
-      0 1px 2px rgba(18, 24, 40, 0.1),
-      0 14px 34px rgba(18, 24, 40, 0.14);
     --composer-shell-shadow-hero:
       inset 0 1px 0 rgba(255, 255, 255, 0.94),
       0 2px 5px rgba(18, 24, 40, 0.1),
@@ -241,11 +236,6 @@
       0 12px 30px rgba(0, 0, 0, 0.26);
     --composer-shell-shadow-focus:
       0 0 0 1px color-mix(in srgb, var(--brand) 38%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 1px 2px rgba(0, 0, 0, 0.5),
-      0 14px 34px rgba(0, 0, 0, 0.3);
-    --composer-shell-shadow-recording:
-      0 0 0 1px color-mix(in srgb, var(--brand) 16%, transparent),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       0 1px 2px rgba(0, 0, 0, 0.5),
       0 14px 34px rgba(0, 0, 0, 0.3);
@@ -1159,137 +1149,6 @@
     transform: scale(0.94);
   }
 
-  /* Composer voice — ChatGPT / Codex dictation 克制态 */
-  .composer-shell--voice-recording {
-    border-color: color-mix(in srgb, var(--brand) 38%, var(--composer-shell-border));
-    box-shadow: var(--composer-shell-shadow-recording);
-    transition:
-      border-color var(--motion-normal) var(--motion-ease),
-      box-shadow var(--motion-normal) var(--motion-ease);
-  }
-  .composer-shell--voice-transcribing {
-    border-color: color-mix(in srgb, var(--brand) 22%, var(--composer-shell-border));
-    box-shadow: var(--composer-shell-shadow);
-    transition: border-color var(--motion-normal) var(--motion-ease);
-  }
-  .composer-voice-mic-wrap.is-recording .composer-voice-mic-btn {
-    animation: composer-voice-mic-breathe 1.5s var(--motion-ease) infinite;
-  }
-  .composer-voice-ripple {
-    position: absolute;
-    inset: 0;
-    border-radius: 0.375rem;
-    border: 1.5px solid color-mix(in srgb, var(--brand) 55%, transparent);
-    opacity: 0;
-    animation: composer-voice-ripple 1.75s var(--motion-ease) infinite;
-    pointer-events: none;
-  }
-  .composer-voice-ripple--delay {
-    animation-delay: 0.55s;
-  }
-  .composer-voice-overlay {
-    animation: composer-voice-fade-in var(--motion-normal) var(--motion-ease) both;
-  }
-  .composer-voice-live-bar {
-    display: block;
-    width: 2px;
-    height: 6px;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--brand) 70%, var(--foreground));
-    transform-origin: bottom center;
-    animation: composer-voice-live 0.72s ease-in-out infinite alternate;
-  }
-  .composer-voice-eq-bar {
-    display: block;
-    width: 2px;
-    height: 4px;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--foreground) 28%, transparent);
-    transform-origin: bottom center;
-    animation: composer-voice-eq 0.65s ease-in-out infinite alternate;
-  }
-  .composer-voice-shimmer {
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--foreground) 35%, transparent) 0%,
-      color-mix(in srgb, var(--foreground) 55%, transparent) 45%,
-      color-mix(in srgb, var(--foreground) 35%, transparent) 90%
-    );
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: composer-voice-shimmer 1.6s ease-in-out infinite;
-  }
-  @keyframes composer-voice-mic-breathe {
-    0%,
-    100% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.04);
-    }
-  }
-  @keyframes composer-voice-ripple {
-    0% {
-      transform: scale(1);
-      opacity: 0.55;
-    }
-    100% {
-      transform: scale(1.85);
-      opacity: 0;
-    }
-  }
-  @keyframes composer-voice-fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  @keyframes composer-voice-live {
-    from {
-      transform: scaleY(0.25);
-      opacity: 0.45;
-    }
-    to {
-      transform: scaleY(1);
-      opacity: 1;
-    }
-  }
-  @keyframes composer-voice-eq {
-    from {
-      transform: scaleY(0.3);
-    }
-    to {
-      transform: scaleY(1);
-    }
-  }
-  @keyframes composer-voice-shimmer {
-    0% {
-      background-position: 100% 0;
-    }
-    100% {
-      background-position: -100% 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .composer-voice-mic-wrap.is-recording .composer-voice-mic-btn,
-    .composer-voice-ripple,
-    .composer-voice-live-bar,
-    .composer-voice-eq-bar,
-    .composer-voice-shimmer {
-      animation: none !important;
-    }
-    .composer-voice-shimmer {
-      color: var(--muted-foreground);
-      background: none;
-      -webkit-background-clip: unset;
-      background-clip: unset;
-    }
-  }
-
   /* Picker overlay */
   .picker-backdrop {
     animation: picker-fade-in var(--motion-normal) var(--motion-ease) both;
@@ -1535,6 +1394,78 @@
   .timeline-scroll-viewport {
     overscroll-behavior: contain;
     contain: layout style;
+  }
+  .timeline-with-outline .timeline-scroll-with-dock-pane {
+    padding-left: 44px;
+  }
+  .timeline-outline {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    height: max(44px, calc(100% - 2 * var(--composer-dock-h, 11rem) - 2rem));
+    display: flex;
+    align-items: center;
+    left: 8px;
+    width: 44px;
+    z-index: 55;
+  }
+  .timeline-outline-track {
+    position: relative;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .timeline-outline-track::-webkit-scrollbar { display: none; }
+  .timeline-outline-stop {
+    display: flex;
+    align-items: center;
+    width: 44px;
+    height: 10px;
+    padding-left: 8px;
+    cursor: pointer;
+  }
+  .timeline-outline-stop:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
+    border-radius: 3px;
+  }
+  .timeline-outline-tick {
+    display: block;
+    height: 2px;
+    background: color-mix(in srgb, var(--text-secondary) 45%, var(--bg-base));
+    transition: width 150ms ease, background-color 150ms ease;
+  }
+  .timeline-outline-tick[data-emphasized] { background: var(--text-primary); }
+  .timeline-outline-preview {
+    position: absolute;
+    left: 100%;
+    width: var(--outline-preview-width, 320px);
+    padding-left: 8px;
+  }
+  .timeline-outline-preview-card {
+    padding: 12px 14px;
+    border: 1px solid var(--border-base);
+    border-radius: 14px;
+    background: var(--bg-2);
+    box-shadow: 0 6px 24px #00000014;
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  .timeline-outline-preview-title,
+  .timeline-outline-preview-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .timeline-outline-preview-title { -webkit-line-clamp: 2; color: var(--text-primary); font-weight: 600; }
+  .timeline-outline-preview-text { -webkit-line-clamp: 3; color: var(--text-secondary); margin-top: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    .timeline-outline-tick { transition: none; }
+  }
+  @media (pointer: coarse) {
+    .timeline-outline-stop { height: 44px; }
   }
   /* 向下滚到底：最后一条停在输入框上方（留白 + scroll-padding）；向上滚：内容可穿过悬浮层由渐变+模糊处理 */
   .timeline-scroll-with-dock .overlay-scroll-pane {
@@ -2121,11 +2052,6 @@
 
 /* ── Project Home: hero → dock 过渡动画 ── */
 
-/* Composer hero 居中位置：上移到视口中心偏上 */
-.composer-dock-hero {
-  transform: translateY(calc(-50vh + 50% - 2rem));
-}
-
 /* hero 态输入框更宽、更柔和 */
 .composer-dock-hero .composer-dock-inner {
   transition: max-width var(--motion-slow) var(--motion-ease);
@@ -2322,10 +2248,10 @@
   min-width: 0;
   flex-shrink: 0;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 2px;
   border-top: 1px solid hsl(var(--border) / 0.55);
-  background: var(--surface-sidebar);
+  background: transparent;
   padding: 0 8px;
   color: hsl(var(--muted-foreground));
   font-size: 11px;
@@ -2335,7 +2261,7 @@
   min-height: 24px;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   border-radius: 4px;
   padding: 0 6px;
   white-space: nowrap;

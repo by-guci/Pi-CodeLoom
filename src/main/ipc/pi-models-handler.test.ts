@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listRegistryVersionsCached: vi.fn(),
   listRegistryVersions: vi.fn(),
   installVersion: vi.fn(),
+  installGlobalVersion: vi.fn(),
   finalizeVersionInstall: vi.fn(),
   readSdkSelection: vi.fn(),
   getFocusedWindow: vi.fn(() => undefined as { id: number } | undefined),
@@ -18,7 +19,11 @@ const mocks = vi.hoisted(() => ({
   isAllowedSdkVersion: vi.fn(),
   confirmSdkSelection: vi.fn(),
   stopPreview: vi.fn(),
+  lookupModelCapabilities: vi.fn(),
   workerRunning: true,
+  activeTurns: false,
+  installing: false,
+  runtime: { mode: 'host', distro: null } as { mode: 'host' | 'wsl'; distro: string | null },
 }))
 
 vi.mock('./registry', () => ({
@@ -41,13 +46,17 @@ vi.mock('../pi-models-json', () => ({
   fetchRemoteModelIds: vi.fn(),
 }))
 
+vi.mock('../models-dev-lookup', () => ({
+  lookupModelCapabilities: mocks.lookupModelCapabilities,
+}))
+
 vi.mock('../worker-manager', () => ({
   workerManager: {
     get isRunning() {
       return mocks.workerRunning
     },
     reloadModels: mocks.reloadModels,
-    hasActiveTurns: false,
+    get hasActiveTurns() { return mocks.activeTurns },
     cwd: '',
     lastSdkFallback: false,
   },
@@ -64,10 +73,13 @@ vi.mock('../sdk-manager', () => ({
   listRegistryVersionsCached: mocks.listRegistryVersionsCached,
   listRegistryVersions: mocks.listRegistryVersions,
   installVersion: mocks.installVersion,
+  installGlobalVersion: mocks.installGlobalVersion,
   finalizeVersionInstall: mocks.finalizeVersionInstall,
   switchTo: mocks.switchTo,
   isAllowedSdkVersion: mocks.isAllowedSdkVersion,
   invalidateSdkManagerCaches: vi.fn(),
+  isInstalling: () => mocks.installing,
+  readWslSdkStatusCached: vi.fn(async () => ({ globalVersion: '0.84.0', active: { kind: 'global', version: '0.84.0' } })),
 }))
 vi.mock('./sdk-session', () => ({ probeSelectedSdk: vi.fn() }))
 vi.mock('../sdk-selection-transaction', () => ({ confirmSdkSelection: mocks.confirmSdkSelection }))
@@ -75,7 +87,7 @@ vi.mock('../session-preview-process', () => ({
   sessionPreviewProcess: { stop: mocks.stopPreview },
 }))
 vi.mock('../wsl/runtime-config', () => ({
-  getAgentRuntimeConfig: vi.fn(() => ({ mode: 'host', distro: null })),
+  getAgentRuntimeConfig: vi.fn(() => mocks.runtime),
 }))
 vi.mock('../wsl/sdk-resolve', () => ({ assertWslSdkAvailable: vi.fn() }))
 vi.mock('electron', () => ({
@@ -106,6 +118,8 @@ beforeEach(() => {
   mocks.listRegistryVersionsCached.mockReset()
   mocks.listRegistryVersions.mockReset().mockResolvedValue(['0.83.0'])
   mocks.installVersion.mockReset().mockResolvedValue({ userDir: 'user-new' })
+  mocks.installGlobalVersion.mockReset().mockResolvedValue({ version: '0.84.0' })
+  mocks.lookupModelCapabilities.mockReset().mockResolvedValue({ ok: true, models: {} })
   mocks.finalizeVersionInstall.mockReset()
   mocks.readSdkSelection.mockReset().mockReturnValue({ kind: 'builtin' })
   mocks.getFocusedWindow.mockReset().mockReturnValue(undefined)
@@ -114,10 +128,88 @@ beforeEach(() => {
   mocks.confirmSdkSelection.mockReset().mockResolvedValue({ kind: 'builtin', version: '0.83.0' })
   mocks.stopPreview.mockReset()
   mocks.workerRunning = true
+  mocks.activeTurns = false
+  mocks.installing = false
+  mocks.runtime = { mode: 'host', distro: null }
   registerPiSdkHandlers()
 })
 
 describe('pi.models IPC handlers', () => {
+  it('registers the global SDK upgrade action', () => {
+    expect(mocks.handlers.get('ipc:sdk.upgradeGlobal')).toBeTypeOf('function')
+  })
+
+  it('looks up model capabilities from models.dev', async () => {
+    mocks.lookupModelCapabilities.mockResolvedValue({
+      ok: true,
+      models: { 'glm-5.3': { name: 'GLM-5.3', reasoning: true, input: ['text'], contextWindow: 1_000_000, maxTokens: 131_072 } },
+    })
+    const result = await mocks.handlers.get('ipc:pi.models.lookup')!({ ids: ['glm-5.3'] })
+    expect(mocks.lookupModelCapabilities).toHaveBeenCalledWith(['glm-5.3'])
+    expect(result).toMatchObject({ ok: true, models: { 'glm-5.3': { contextWindow: 1_000_000 } } })
+  })
+  it('upgrades host global Pi without switching SDK selection or stopping workers', async () => {
+    mocks.readSdkSelection.mockReturnValue({ kind: 'user', userDir: 'user-old' })
+
+    const result = await mocks.handlers.get('ipc:sdk.upgradeGlobal')!({ version: '0.84.0' })
+
+    expect(result).toEqual({ ok: true, version: '0.84.0', restartRequired: true })
+    expect(mocks.installGlobalVersion).toHaveBeenCalledWith(expect.any(Function), { version: '0.84.0' })
+    expect(mocks.switchTo).not.toHaveBeenCalled()
+    expect(mocks.confirmSdkSelection).not.toHaveBeenCalled()
+    expect(mocks.stopPreview).not.toHaveBeenCalled()
+  })
+
+  it('upgrades only the saved WSL runtime distribution', async () => {
+    mocks.runtime = { mode: 'wsl', distro: 'Ubuntu-24.04' }
+
+    await mocks.handlers.get('ipc:sdk.upgradeGlobal')!({ version: '0.84.0' })
+
+    expect(mocks.installGlobalVersion).toHaveBeenCalledWith(expect.any(Function), { distro: 'Ubuntu-24.04', version: '0.84.0' })
+    expect(mocks.switchTo).not.toHaveBeenCalled()
+  })
+
+  it('rejects global upgrades while any session is running', async () => {
+    mocks.activeTurns = true
+    const result = await mocks.handlers.get('ipc:sdk.upgradeGlobal')!({ version: '0.84.0' })
+    expect(result).toMatchObject({ ok: false, error: expect.any(String) })
+    expect(mocks.installGlobalVersion).not.toHaveBeenCalled()
+  })
+
+  it.each(['ipc:sdk.install', 'ipc:sdk.switch', 'ipc:sdk.upgradeGlobal'])('blocks %s during another SDK installation', async (channel) => {
+    mocks.installing = true
+    const result = await mocks.handlers.get(channel)!({ version: '0.84.0', target: 'global' })
+    expect(result).toEqual({ ok: false, error: 'SDK_INSTALL_BUSY' })
+    expect(mocks.installGlobalVersion).not.toHaveBeenCalled()
+    expect(mocks.installVersion).not.toHaveBeenCalled()
+    expect(mocks.switchTo).not.toHaveBeenCalled()
+  })
+
+  it('forwards global installation logs and reports a real failure', async () => {
+    const win = { id: 1 }
+    mocks.getFocusedWindow.mockReturnValue(win)
+    mocks.installGlobalVersion.mockImplementation(async (onProgress) => {
+      onProgress('npm error EACCES')
+      throw new Error('npm 退出码 1')
+    })
+
+    const result = await mocks.handlers.get('ipc:sdk.upgradeGlobal')!({ version: '0.84.0' })
+
+    expect(result).toEqual({ ok: false, error: 'npm 退出码 1' })
+    expect(mocks.sendEvent.mock.calls).toEqual([
+      [win, { type: 'sdk-install-progress', version: '0.84.0', line: 'npm error EACCES' }],
+      [win, { type: 'sdk-install-progress', version: '0.84.0', done: true, error: 'npm 退出码 1' }],
+    ])
+  })
+
+  it('reports the saved runtime with SDK status so the upgrade target is explicit', async () => {
+    mocks.runtime = { mode: 'wsl', distro: 'Ubuntu-24.04' }
+    await expect(mocks.handlers.get('ipc:sdk.status')!({})).resolves.toMatchObject({
+      runtime: { mode: 'wsl', distro: 'Ubuntu-24.04' },
+      globalVersion: '0.84.0',
+    })
+  })
+
   it.each([
     ['ipc:sdk.install', { version: '0.83.0' }],
     ['ipc:sdk.switch', { target: 'builtin' }],

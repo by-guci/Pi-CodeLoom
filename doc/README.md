@@ -1,8 +1,8 @@
-# pi Desktop extension adapter docs (for AI / extension authors)
+# Pi-CodeLoom extension adapter docs (for AI / extension authors)
 
 **[简体中文](./README.zh-CN.md)**
 
-Standalone docs for **pi Desktop compatibility layer v2**. Copy to any AI to author **`adapter.json`** for **pi npm extensions** without reading the whole pi-app tree.
+Standalone docs for **Pi-CodeLoom compatibility layer v2**. Copy to any AI to author **`adapter.json`** for **pi npm extensions** without reading the whole Pi-CodeLoom tree.
 
 ## User guide (install, shortcuts, adapter list)
 
@@ -24,7 +24,7 @@ Internal design, audits, and architecture-skill playbook: local `docs/` (see `do
 ## Prompt for AI (paste as-is)
 
 ```text
-You are a pi Desktop extension adapter author. Use only doc/adapter-authoring-guide.md (and doc/adapter-layer-plan.md if needed).
+You are a Pi-CodeLoom extension adapter author. Use only doc/adapter-authoring-guide.md (and doc/adapter-layer-plan.md if needed).
 
 Task: write or update adapter.json for npm extension "<package>".
 Known: <registerTool names, registerCommand, config paths, ctx.ui flows>.
@@ -53,4 +53,4 @@ If info is missing, list what to confirm from extension README/source first.
 
 ---
 
-*pi Desktop — pi core, desktop shell, declarative adapters.*
+*Pi-CodeLoom — pi core, desktop shell, declarative adapters.*

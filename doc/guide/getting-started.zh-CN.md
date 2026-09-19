@@ -2,15 +2,15 @@
 
 **[English](./getting-started.md)**
 
-面向第一次使用 **pi Desktop** 的开发者。截图：[../images/](../images/)（发布前将占位图换为 `overview.png`）。
+面向第一次使用 **Pi-CodeLoom** 的开发者。截图：[../images/](../images/)（发布前将占位图换为 `overview.png`）。
 
 ---
 
 ## 1. 安装与启动
 
 ```bash
-git clone https://github.com/justhil/pi-app.git
-cd pi-app
+git clone https://github.com/by-guci/Pi-CodeLoom.git
+cd Pi-CodeLoom
 npm install
 npm run dev
 ```
@@ -19,7 +19,7 @@ npm run dev
 
 **本地打 Windows 包**：`npm run icon:export && npm run package:win` → `dist/`
 
-**安装包下载**：[GitHub Releases](https://github.com/justhil/pi-app/releases/latest)（安装版 + 便携版）。
+**安装包下载**：[GitHub Releases](https://github.com/by-guci/Pi-CodeLoom/releases)（安装版 + 便携版）。
 
 ---
 
@@ -45,13 +45,12 @@ npm run dev
 | 跳转节点 | 消息悬停 Undo，或会话树 |
 | 模型 / 思考 | 输入区底部 pill |
 | 语言 | **设置 → 常规** → 中文 / English |
-| 语音 | 输入区麦克风；**设置 → 语音输入** 配置 codex-asr |
 | 附件（文件树） | 右栏 **文件** → 从文件树 **拖动文件** 到输入区（文件夹不可拖）；或文件 **右键 → 添加到聊天** |
 | 多标签预览 | **文件** 树：`Ctrl`/`⌘`+左键，或 **右键 → 在新窗口打开**；中键关闭标签；拖标签排序 |
 | 宽屏预览 | **文件** 顶栏 **展开预览到聊天区**（占满主对话列；内栏文件树可照常收起/展开） |
 | 附件（其它） | 从资源管理器拖入输入区、`+` 选文件、`Ctrl+V` 粘贴图片 |
 
-完整快捷键：[README.zh-CN.md](../../README.zh-CN.md#键盘快捷键)。
+完整快捷键：[README.md](../../README.md#键盘快捷键)。
 
 ---
 
@@ -74,7 +73,6 @@ npm run dev
 | 白屏 / 热更新失效 | 删 `node_modules/.vite`，再 `npm run dev` |
 | 设置里有扩展，对话没工具 | 查 `packages` + **重启会话** |
 | 切换会话慢 | 先最近一段；发送或树跳转后完整绑定 |
-| 语音不可用 | 设置 → 语音输入；不影响打字 |
 | 弹窗被关掉 | 时间线「继续作答」或处理「稍后作答」 |
 
 社区：[LinuxDo](https://linux.do/)

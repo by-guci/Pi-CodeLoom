@@ -3,44 +3,57 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const invoke = vi.fn()
 const setRunState = vi.fn()
 const toastWarning = vi.fn()
+let storeState: {
+  historySessionFile: string | null
+  currentWorkspace: string
+  currentSessionId: string
+  sessions: Array<{ sessionId: string; modelId?: string }>
+  lastModel: string
+  lastThinking: string
+  runState: { model?: string; thinkingLevel?: string }
+  setRunState: typeof setRunState
+}
 
 vi.mock('@renderer/lib/ipc-client', () => ({
   ipcClient: { invoke: (...args: unknown[]) => invoke(...args) },
-}))
+ }))
 
 vi.mock('@renderer/stores/ui-store', () => ({
   useUIStore: {
-    getState: () => ({
-      historySessionFile: '/proj/sessions/a.jsonl',
-      sessions: [],
-      lastModel: 'anthropic/claude-from-last',
-      lastThinking: 'low',
-      runState: { model: 'jsonl/stale-display', thinkingLevel: 'medium' },
-      setRunState,
-    }),
+    getState: () => storeState,
   },
-}))
+ }))
 
 vi.mock('sonner', () => ({
   toast: { warning: (...args: unknown[]) => toastWarning(...args) },
-}))
+ }))
 
 vi.mock('@renderer/lib/session-worker-sync', () => ({
   isViewingWorkerBoundSession: (view: string | null | undefined, worker: string | null | undefined) =>
     !!view && !!worker && view === worker,
-}))
+ }))
 
 import {
   applyComposerDisplayMeta,
   applyWorkerBoundModelDisplay,
   notifyModelFallback,
-} from '../session-display-meta'
+ } from '../session-display-meta'
 
 describe('session-display-meta model authority', () => {
   beforeEach(() => {
     invoke.mockReset()
     setRunState.mockReset()
     toastWarning.mockReset()
+    storeState = {
+      historySessionFile: '/proj/sessions/a.jsonl',
+      currentWorkspace: '/proj',
+      currentSessionId: 'session-a',
+      sessions: [],
+      lastModel: 'anthropic/claude-from-last',
+      lastThinking: 'low',
+      runState: { model: 'jsonl/stale-display', thinkingLevel: 'medium' },
+      setRunState,
+    }
   })
 
   it('when worker bound to view, uses runtime model and ignores JSONL meta', async () => {
@@ -113,6 +126,28 @@ describe('session-display-meta model authority', () => {
     expect(setRunState).toHaveBeenCalledWith({
       model: 'custom/gpt-5.6-terra',
       thinkingLevel: 'low',
+    })
+  })
+
+  it('when blank new chat, uses pi default model instead of leftover worker session', async () => {
+    storeState.historySessionFile = null
+    storeState.currentSessionId = '__pending_new__'
+    storeState.runState = {}
+    invoke.mockImplementation(async (method: string) => {
+      if (method === 'ipc:runtime.getState') {
+        return { state: { sessionFile: '/proj/sessions/old.jsonl', model: 'other/old-model' } }
+      }
+      if (method === 'pi.settings.get') {
+        return { settings: { defaultProvider: '刘', defaultModel: 'grok-4.6', defaultThinkingLevel: 'max' } }
+      }
+      return {}
+    })
+
+    await applyComposerDisplayMeta()
+
+    expect(setRunState).toHaveBeenCalledWith({
+      model: '刘/grok-4.6',
+      thinkingLevel: 'max',
     })
   })
 

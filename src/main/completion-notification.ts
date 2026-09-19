@@ -1,3 +1,4 @@
+import { APP_DISPLAY_NAME } from '@shared/app-brand'
 import { basename } from 'path'
 import type { AppEvent, CompletionEvent } from '@shared/app-events'
 import { getMainWindow } from './window'
@@ -10,7 +11,7 @@ import {
   createCompletionNotificationController,
   type CompletionNotificationController,
 } from './completion-notification-controller'
-import { disposeCompletionDelivery, presentCompletionCard } from './completion-notification-delivery'
+import { disposeCompletionDelivery, presentCompletionCard, setNotificationResolvedHandler } from './completion-notification-delivery'
 import { readCompletionNotificationSettings } from './completion-notification-settings'
 
 let controller: CompletionNotificationController | null = null
@@ -18,7 +19,7 @@ let unbindEvents: (() => void) | null = null
 
 function projectLabel(workspaceId: string): string {
   const name = basename(String(workspaceId || '').replace(/\\/g, '/'))
-  return name || 'pi Desktop'
+  return name || APP_DISPLAY_NAME
 }
 
 function windowState() {
@@ -71,6 +72,7 @@ function handleWorkerExit(slot: {
 
 export function initializeCompletionNotifications(): void {
   if (unbindEvents) return
+  setNotificationResolvedHandler((notificationId) => getController().markInboxRead(notificationId))
   unbindEvents = bindCompletionNotificationEvents({
     observeAppEvent: handleAppEvent,
     observeWorkerExit: handleWorkerExit,
@@ -100,5 +102,6 @@ export function disposeCompletionNotifications(): void {
   unbindEvents = null
   controller?.dispose()
   controller = null
+  setNotificationResolvedHandler(null)
   disposeCompletionDelivery()
 }

@@ -153,4 +153,4 @@ export const modelInfoSchema = z.object({
   available: z.boolean(),
 })
 
-export const thinkingLevelSchema = z.enum(['off', 'minimal', 'low', 'medium', 'high', 'xhigh'])
+export const thinkingLevelSchema = z.enum(['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'])

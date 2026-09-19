@@ -111,3 +111,17 @@ describe('/model runtime confirmation', () => {
     expect(useUIStore.getState().runState.model).toBe('anthropic/old')
   })
 })
+
+describe('/thinking levels', () => {
+  it('accepts max and ultra after xhigh', async () => {
+    invoke.mockResolvedValue({ level: 'max' })
+    expect(await executeSlashCommand('/thinking max')).toBe(true)
+    expect(invoke).toHaveBeenCalledWith('thinkingLevel.set', { sessionId: '', level: 'max' })
+    expect(useUIStore.getState().runState.thinkingLevel).toBe('max')
+
+    invoke.mockResolvedValue({ level: 'ultra' })
+    expect(await executeSlashCommand('/thinking ultra')).toBe(true)
+    expect(invoke).toHaveBeenCalledWith('thinkingLevel.set', { sessionId: '', level: 'ultra' })
+    expect(useUIStore.getState().runState.thinkingLevel).toBe('ultra')
+  })
+})

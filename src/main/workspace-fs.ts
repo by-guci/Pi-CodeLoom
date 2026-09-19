@@ -1,7 +1,7 @@
 import { closeSync, existsSync, mkdirSync, openSync, readSync, readdirSync, realpathSync, renameSync, statSync, writeFileSync } from 'fs'
 import { StringDecoder } from 'node:string_decoder'
 import { WORKSPACE_TEXT_MAX_BYTES } from '../../packages/shared/workspace-preview'
-import { dirname, join, normalize, relative, resolve, sep } from 'path'
+import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'path'
 
 export type WorkspaceFsError = 'missing_root' | 'outside_workspace' | 'not_found' | 'not_a_file' | 'too_large' | 'read_failed'
 
@@ -39,7 +39,7 @@ export function resolvePathUnderWorkspace(root: string, inputPath: string): { ok
     absReal = abs
   }
   const rel = relative(rootAbs, absReal)
-  if (rel === '..' || rel.startsWith(`..${sep}`) || rel.startsWith('../')) {
+  if (isAbsolute(rel) || rel === '..' || rel.startsWith(`..${sep}`) || rel.startsWith('../')) {
     return { ok: false, error: 'outside_workspace' }
   }
   return { ok: true, abs: absReal }
