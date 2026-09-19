@@ -74,27 +74,29 @@ export async function handleSetmodel(msg: WorkerIncomingMessage, reply: WorkerRe
 
 
 export async function handleSetthinkinglevel(msg: WorkerIncomingMessage, reply: WorkerReply): Promise<void> {
-        // 与 handleSetmodel 同理：SDK 的 setThinkingLevel 会同时改写全局默认思考级别
-        // （setDefaultThinkingLevel），会话 JSONL 已按会话持久化——只还原全局默认。
-        const settingsManager: SettingsManager | null = st.session?.settingsManager ?? null
-        const prevLevel =
-          settingsManager && typeof settingsManager.getDefaultThinkingLevel === 'function'
-            ? settingsManager.getDefaultThinkingLevel()
-            : undefined
-        st.session?.setThinkingLevel(msg.level as Parameters<NonNullable<typeof st.session>['setThinkingLevel']>[0])
-        if (
-          settingsManager &&
-          prevLevel !== undefined &&
-          settingsManager.getDefaultThinkingLevel() !== prevLevel
-        ) {
-          settingsManager.setDefaultThinkingLevel(prevLevel)
-        }
-        if (st.session) {
-          const modelStr = currentSessionModelKey()
-          emit({ ...baseEvent(), type: 'run', phase: 'state', model: modelStr, thinkingLevel: st.session.thinkingLevel })
-        }
-        reply({ type: 'setThinkingLevel-done' })
-        return
+  if (!st.session) { reply({ type: 'error', error: 'Worker session not started' }); return }
+  if (typeof msg.expectedModel === 'string' && msg.expectedModel !== currentSessionModelKey()) {
+    reply({ type: 'error', error: 'MODEL_CHANGED' })
+    return
+  }
+  const level = String(msg.level || '')
+  if (msg.expectedModel && typeof st.session.getAvailableThinkingLevels === 'function' &&
+      !st.session.getAvailableThinkingLevels().some((value) => value === level)) {
+    reply({ type: 'error', error: 'THINKING_LEVEL_UNSUPPORTED' })
+    return
+  }
+  const settingsManager: SettingsManager | null = st.session.settingsManager ?? null
+  const previous = settingsManager?.getDefaultThinkingLevel?.()
+  try {
+    st.session.setThinkingLevel(level as Parameters<typeof st.session.setThinkingLevel>[0])
+    const actual = st.session.thinkingLevel
+    emit({ ...baseEvent(), type: 'run', phase: 'state', model: currentSessionModelKey(), thinkingLevel: actual })
+    reply({ type: 'setThinkingLevel-done', level: actual })
+  } finally {
+    if (settingsManager && previous !== undefined && settingsManager.getDefaultThinkingLevel() !== previous) {
+      settingsManager.setDefaultThinkingLevel(previous)
+    }
+  }
 }
 
 

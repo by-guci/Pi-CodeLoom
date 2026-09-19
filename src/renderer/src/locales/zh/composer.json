@@ -1,4 +1,28 @@
 {
+  "thinkingPicker": {
+    "title": "Thinking 等级",
+    "enabled": "ON",
+    "selected": "Thinking：{{level}}",
+    "switchFailed": "思考等级未能切换，请确认当前模型支持该选项后重试。",
+    "selectModel": "请先选择模型。",
+    "loading": "正在查询此模型支持的思考选项…",
+    "loadFailed": "未能查询模型能力，请重试。",
+    "unknown": "未找到可用的思考等级，请检查模型配置和 Pi 运行环境。",
+    "fixed": "此模型未提供可调的思考选项。",
+    "budget": "此模型按思考 token 预算控制，以上选项是 Pi 运行环境的预算预设。",
+    "limited": "部分档位尚未在当前运行环境启用，可检查模型配置或升级 Pi 环境。",
+    "runtime": "未取得供应商的档位记录，当前显示 Pi 运行环境支持的选项。",
+    "descriptions": {
+      "off": "关闭可选思考",
+      "minimal": "极简思考",
+      "low": "轻度思考",
+      "medium": "中等思考",
+      "high": "深度思考",
+      "xhigh": "更高思考强度",
+      "max": "最高思考强度",
+      "enabled": "开启思考"
+    }
+  },
   "placeholder": "消息或 / 命令",
   "placeholderEphemeral": "首条消息即对话标题",
   "send": "发送",

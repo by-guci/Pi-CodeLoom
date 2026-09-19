@@ -1,4 +1,6 @@
 import { app } from 'electron'
+import { z } from 'zod'
+import { getModelThinkingOptions } from '../../model-thinking-options'
 import { registerHandler, registerHandlerWithSchema } from '../registry'
 import { workerManager } from '../../worker-manager'
 import { configStore } from '../../config-store'
@@ -19,6 +21,7 @@ import {
 } from '../../active-sdk-models'
 
 export function registerModelRuntimeHandlers(): void {
+  registerHandlerWithSchema('ipc:thinkingLevel.options', z.object({ model: z.string().min(1).max(512), sessionFile: z.string().optional() }), async (req) => getModelThinkingOptions(req.model, req.sessionFile))
   registerHandler('ipc:model.list', async (req) => {
     const scope = req?.scope === 'available' ? 'available' : req?.scope === 'settings' ? 'settings' : 'catalog'
     const mapRegistry = (models: readonly ModelEntry[]) =>
@@ -124,13 +127,19 @@ export function registerModelRuntimeHandlers(): void {
 
   registerHandler('ipc:thinkingLevel.set', async (req) => {
     const sessionFile = String(req.sessionFile || '').trim() || undefined
+    const expectedModel = typeof req.model === 'string' ? req.model : undefined
+    if (expectedModel) {
+      const capabilities = await getModelThinkingOptions(expectedModel, sessionFile)
+      if (!capabilities.options.some((option) => option.level === req.level)) throw new Error('THINKING_LEVEL_UNSUPPORTED')
+    }
     if (!workerManager.isRunning && !sessionFile) {
       const cwd = workerManager.cwd || configStore.get('currentProject')
       if (!cwd || isSandboxWorkspacePath(cwd)) throw new Error('Worker not started')
       await workerManager.start(cwd)
     }
-    await workerManager.setThinkingLevel(req.level, sessionFile)
-    return { level: req.level }
+    const level = await workerManager.setThinkingLevel(req.level, sessionFile, expectedModel)
+    if (!level) throw new Error('THINKING_LEVEL_NOT_CONFIRMED')
+    return { level }
   })
 
   registerHandler('ipc:runtime.getState', async (req) => {

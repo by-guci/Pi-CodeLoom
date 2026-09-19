@@ -2,6 +2,7 @@
 
 import type { AppEvent } from './app-events'
 import type { AppUpdateState } from './app-update'
+import type { ModelThinkingOptions } from './model-thinking'
 import type { CompatibilityLevel } from './extension-types'
 import type { ModelAuthProjection } from './model-auth-projection'
 import type { SessionContextPreview } from './session-context-preview'
@@ -208,6 +209,7 @@ export type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhi
 export interface ThinkingLevelSetRequest {
   sessionId: string
   sessionFile?: string
+  model?: string
   level: ThinkingLevel
 }
 export interface ThinkingLevelSetResponse { level: string }
@@ -325,6 +327,7 @@ export interface IpcMethodMap {
   'pi.models.fetch': { request: PiModelsFetchRequest; response: PiModelsFetchResponse }
   'pi.models.lookup': { request: PiModelsLookupRequest; response: PiModelsLookupResponse },
   'thinkingLevel.set': { request: ThinkingLevelSetRequest; response: ThinkingLevelSetResponse }
+  'thinkingLevel.options': { request: { model: string; sessionFile?: string }; response: ModelThinkingOptions }
   'commands.list': { request: CommandsListRequest; response: CommandsListResponse }
   'review.getDiff': { request: ReviewGetDiffRequest; response: ReviewGetDiffResponse }
   'review.stageHunks': { request: ReviewStageHunksRequest; response: ReviewStageHunksResponse }

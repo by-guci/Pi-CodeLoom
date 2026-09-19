@@ -16,6 +16,7 @@ function sessionWith(options: {
   current?: { provider: string; id: string }
   setModel?: (model: { provider: string; id: string }) => Promise<void>
   setThinkingLevel?: (level: string) => void
+  availableThinkingLevels?: string[]
   settingsManager?: {
     getDefaultProvider: () => string | undefined
     getDefaultModel: () => string | undefined
@@ -31,6 +32,7 @@ function sessionWith(options: {
     settingsManager: options.settingsManager,
     setModel: options.setModel ?? (async (model) => Object.assign(current, model)),
     setThinkingLevel: options.setThinkingLevel ?? (() => undefined),
+    getAvailableThinkingLevels: () => options.availableThinkingLevels ?? ['off', 'low', 'medium', 'high'],
   } as unknown as AgentSession
 }
 
@@ -228,7 +230,7 @@ describe('handleSetthinkinglevel', () => {
 
     // 会话思考级别已由 setThinkingLevel 更新，但全局默认被还原为切前的值。
     expect(setDefault).toHaveBeenCalledWith('off')
-    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done' })
+    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done', level: 'medium' })
   })
 
   it('does not write a default thinking level when none was configured before', () => {
@@ -248,7 +250,7 @@ describe('handleSetthinkinglevel', () => {
     handleSetthinkinglevel({ level: 'high' }, reply)
 
     expect(setDefault).not.toHaveBeenCalled()
-    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done' })
+    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done', level: 'medium' })
   })
 
   it('leaves the default untouched when the session has no settings manager', () => {
@@ -257,6 +259,52 @@ describe('handleSetthinkinglevel', () => {
 
     handleSetthinkinglevel({ level: 'high' }, reply)
 
-    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done' })
+    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done', level: 'medium' })
+  })
+
+  it('rejects a selection if the model changed while the picker was open', async () => {
+    const setThinkingLevel = vi.fn()
+    st.session = sessionWith({ setThinkingLevel })
+    const reply = vi.fn()
+    await handleSetthinkinglevel({ level: 'high', expectedModel: 'xai/grok-4.6' }, reply)
+    expect(reply).toHaveBeenCalledWith({ type: 'error', error: 'MODEL_CHANGED' })
+    expect(setThinkingLevel).not.toHaveBeenCalled()
+  })
+
+  it('rejects levels unsupported by the active SDK', async () => {
+    const setThinkingLevel = vi.fn()
+    st.session = sessionWith({ setThinkingLevel })
+    const reply = vi.fn()
+    await handleSetthinkinglevel({ level: 'max', expectedModel: 'anthropic/old' }, reply)
+    expect(reply).toHaveBeenCalledWith({ type: 'error', error: 'THINKING_LEVEL_UNSUPPORTED' })
+    expect(setThinkingLevel).not.toHaveBeenCalled()
+  })
+
+  it('does not confirm a selection without an active session', async () => {
+    st.session = null
+    const reply = vi.fn()
+    await handleSetthinkinglevel({ level: 'high' }, reply)
+    expect(reply).toHaveBeenCalledWith({ type: 'error', error: 'Worker session not started' })
+  })
+
+  it('reports the actual level even if the SDK adjusts the requested level', async () => {
+    st.session = sessionWith({ setThinkingLevel: () => { Object.defineProperty(st.session, 'thinkingLevel', { value: 'low' }) } })
+    const reply = vi.fn()
+    await handleSetthinkinglevel({ level: 'high' }, reply)
+    expect(reply).toHaveBeenCalledWith({ type: 'setThinkingLevel-done', level: 'low' })
+  })
+
+  it('restores the global default if the SDK throws after updating it', async () => {
+    let defaultLevel = 'off'
+    st.session = sessionWith({
+      setThinkingLevel: () => { defaultLevel = 'high'; throw new Error('SDK failure') },
+      settingsManager: {
+        getDefaultProvider: () => 'anthropic', getDefaultModel: () => 'old', setDefaultModelAndProvider: vi.fn(),
+        getDefaultThinkingLevel: () => defaultLevel,
+        setDefaultThinkingLevel: (level) => { defaultLevel = level },
+      },
+    })
+    await expect(handleSetthinkinglevel({ level: 'high' }, vi.fn())).rejects.toThrow('SDK failure')
+    expect(defaultLevel).toBe('off')
   })
 })

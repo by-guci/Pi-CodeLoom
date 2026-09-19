@@ -1,4 +1,28 @@
 {
+  "thinkingPicker": {
+    "title": "Thinking level",
+    "enabled": "ON",
+    "selected": "Thinking: {{level}}",
+    "switchFailed": "Could not change thinking level. Check model support and retry.",
+    "selectModel": "Select a model first.",
+    "loading": "Loading thinking options for this model…",
+    "loadFailed": "Could not load model capabilities. Please retry.",
+    "unknown": "No available thinking levels were found. Check the model configuration and Pi runtime.",
+    "fixed": "This model does not expose adjustable thinking options.",
+    "budget": "This model uses a thinking-token budget. These options are Pi runtime budget presets.",
+    "limited": "Some levels are not enabled in the current runtime. Check model settings or upgrade Pi.",
+    "runtime": "Provider-level metadata is unavailable. Showing options supported by the Pi runtime.",
+    "descriptions": {
+      "off": "Disable optional thinking",
+      "minimal": "Minimal thinking",
+      "low": "Light thinking",
+      "medium": "Moderate thinking",
+      "high": "Deep thinking",
+      "xhigh": "Higher thinking effort",
+      "max": "Maximum thinking effort",
+      "enabled": "Enable thinking"
+    }
+  },
   "placeholder": "Message or / command",
   "placeholderEphemeral": "First message becomes the conversation title",
   "send": "Send",

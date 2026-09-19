@@ -2,6 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'fs'
 import { randomUUID } from 'crypto'
 import { join } from 'path'
 import { resolveActiveAgentDir } from './agent-dir'
+import type { ThinkingModel } from '@shared/model-thinking'
 import {
   projectModelCatalog,
   type ModelAuthProjection,
@@ -18,6 +19,9 @@ export type ModelEntry = {
   available?: boolean
   managedBy?: 'active-sdk'
   auth?: ModelAuthProjection
+  reasoning?: boolean
+  thinkingLevelMap?: Record<string, string | null>
+  baseUrl?: string
 }
 
 type LegacyRegistry = ModelAuthProjectionRuntime & {
@@ -28,10 +32,24 @@ type LegacyRegistry = ModelAuthProjectionRuntime & {
 }
 
 type ModernRuntime = ModelAuthProjectionRuntime & {
+  getModel?: (provider: string, id: string) => ModelEntry | undefined
   getError?: () => unknown
   getModels?: () => readonly ModelEntry[] | Promise<readonly ModelEntry[]>
   getAvailable?: () => Promise<readonly ModelEntry[]>
   getAvailableSnapshot?: () => readonly ModelEntry[]
+}
+
+export async function getThinkingModelWithSdk(sdk: unknown, provider: string, id: string): Promise<ThinkingModel | undefined> {
+  const module = sdk as ActiveModelSdk
+  let model: ModelEntry | undefined
+  if (hasModernRuntime(module)) {
+    const runtime = await module.ModelRuntime!.create!({ modelsPath: join(resolveActiveAgentDir(), 'models.json'), allowModelNetwork: false })
+    model = runtime.getModel?.(provider, id) ?? (await runtime.getModels?.())?.find((entry) => entry.provider === provider && entry.id === id)
+  } else if (hasLegacyRegistry(module)) {
+    const registry = module.ModelRegistry!.create!(module.AuthStorage!.create!())
+    model = (await registry.getAll?.())?.find((entry) => entry.provider === provider && entry.id === id)
+  }
+  return model ? { id, provider, reasoning: model.reasoning, thinkingLevelMap: model.thinkingLevelMap, baseUrl: model.baseUrl } : undefined
 }
 
 type ActiveModelSdk = {

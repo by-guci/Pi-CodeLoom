@@ -101,6 +101,7 @@ export const IPC_INVOKE_CHANNELS = [
   'ipc:slash.normalize',
   'ipc:slash.resolve',
   'ipc:thinkingLevel.set',
+  'ipc:thinkingLevel.options',
   'ipc:window:close',
   'ipc:window:close-decision',
   'ipc:window:close-decision-shown',

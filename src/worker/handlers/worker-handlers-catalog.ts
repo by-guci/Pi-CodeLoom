@@ -4,7 +4,7 @@ import type { SkillCatalogResponse } from '@shared/skill-catalog'
 import { projectModelCatalog } from '@shared/model-auth-projection'
 import type { WorkerCommandRow, WorkerIncomingMessage } from '../worker-port-types.js'
 import type { WorkerReply } from '../worker-handler-types.js'
-import { st } from '../worker-runtime.js'
+import { st, currentSessionModelKey } from '../worker-runtime.js'
 import {
   applySkillOverrideChanges,
   getLiveWorkerSkillCatalog,
@@ -265,13 +265,13 @@ export async function handleGetstate(msg: WorkerIncomingMessage, reply: WorkerRe
             ? {
                 sessionId: st.session.sessionId,
                 sessionName: st.session.sessionName,
-                model: (() => {
-                  const m = st.session.model as { provider?: string; modelId?: string } | null
-                  if (!m?.provider || !m?.modelId) return undefined
-                  const id = String(m.modelId)
-                  if (!id || id === 'undefined') return undefined
-                  return `${m.provider}/${id}`
-                })(),
+                model: currentSessionModelKey() || undefined,
+                availableThinkingLevels: st.session.model && typeof st.session.getAvailableThinkingLevels === 'function' ? st.session.getAvailableThinkingLevels() : undefined,
+                thinkingModel: st.session.model ? {
+                  reasoning: st.session.model.reasoning,
+                  thinkingLevelMap: st.session.model.thinkingLevelMap,
+                  baseUrl: st.session.model.baseUrl,
+                } : undefined,
                 thinkingLevel:
                   st.session.thinkingLevel != null && String(st.session.thinkingLevel).trim()
                     ? String(st.session.thinkingLevel)

@@ -8,6 +8,7 @@ vi.mock('./agent-dir', () => ({
 }))
 
 import {
+  getThinkingModelWithSdk,
   listAvailableModelsWithSdk,
   listCatalogModelsWithSdk,
   resolveAvailableModels,
@@ -18,6 +19,24 @@ import {
 } from './active-sdk-models'
 
 describe('active SDK model compatibility', () => {
+  it('reads capabilities from the active runtime without exposing credentials', async () => {
+    const model = { provider: 'custom', id: 'grok-4.6', reasoning: true, thinkingLevelMap: { xhigh: 'xhigh' }, baseUrl: 'https://api.example/v1', headers: { authorization: 'secret' } }
+    const getModel = vi.fn(() => model)
+    const create = vi.fn(async () => ({ getModel }))
+    await expect(getThinkingModelWithSdk({ ModelRuntime: { create } }, model.provider, model.id)).resolves.toEqual({
+      provider: model.provider, id: model.id, reasoning: true, thinkingLevelMap: model.thinkingLevelMap, baseUrl: model.baseUrl,
+    })
+    expect(create).toHaveBeenCalledWith({ modelsPath: join('/default/agent', 'models.json'), allowModelNetwork: false })
+    expect(getModel).toHaveBeenCalledWith(model.provider, model.id)
+  })
+
+  it('uses the exact provider and model when reading a legacy catalog', async () => {
+    const model = { provider: 'relay', id: 'same-id', reasoning: false }
+    const sdk = { AuthStorage: { create: () => ({}) }, ModelRegistry: { create: () => ({ getAll: () => [{ provider: 'native', id: 'same-id', reasoning: true }, model] }) } }
+    await expect(getThinkingModelWithSdk(sdk, 'relay', 'same-id')).resolves.toMatchObject(model)
+    await expect(getThinkingModelWithSdk(sdk, 'missing', 'same-id')).resolves.toBeUndefined()
+  })
+
   it('should_validate_models_with_the_modern_model_runtime', async () => {
     const getError = vi.fn(() => 'modern schema error')
     const create = vi.fn(async () => ({ getError }))

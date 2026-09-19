@@ -491,11 +491,12 @@ export class WorkerManager {
     }
     return String(response.modelId || '')
   }
-  async setThinkingLevel(level: string, sessionFile?: string): Promise<void> {
-    const response = await this.request('setThinkingLevel', { level, sessionFile })
+  async setThinkingLevel(level: string, sessionFile?: string, expectedModel?: string): Promise<string> {
+    const response = await this.request('setThinkingLevel', { level, sessionFile, ...(expectedModel ? { expectedModel } : {}) })
     if (sessionFile && response.leafId !== undefined) {
       setSessionLeafOverride(sessionFile, response.leafId as string | null)
     }
+    return typeof response.level === 'string' ? response.level : ''
   }
   async newSession(cwd: string): Promise<{ sessionId: string; sessionFile?: string }> {
     const run = this.lifecycleChain.then(() =>

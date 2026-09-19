@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ModelAuthProjectionRuntime } from '@shared/model-auth-projection'
 import {
   handleGetmodels,
+  handleGetstate,
   handleGetmodelsettingssnapshot,
   handleGetsessioncontextpreview,
   handleReloadmodels,
@@ -30,6 +31,21 @@ afterEach(() => {
 })
 
 describe('worker model catalog handlers', () => {
+  it('reports the SDK model id and live thinking choices without provider credentials', async () => {
+    st.session = {
+      model: { provider: 'xai', id: 'grok-4.6', reasoning: true, thinkingLevelMap: { xhigh: 'xhigh' }, baseUrl: 'https://api.x.ai/v1', headers: { authorization: 'secret' } },
+      thinkingLevel: 'high', getAvailableThinkingLevels: () => ['low', 'medium', 'high', 'xhigh'],
+      sessionManager: { getLeafId: () => null }, messages: [], agent: {},
+    } as never
+    const reply = vi.fn()
+    await handleGetstate({}, reply)
+    const { state } = reply.mock.calls[0][0]
+    expect(state.model).toBe('xai/grok-4.6')
+    expect(state.availableThinkingLevels).toEqual(['low', 'medium', 'high', 'xhigh'])
+    expect(state.thinkingModel).toEqual({ reasoning: true, thinkingLevelMap: { xhigh: 'xhigh' }, baseUrl: 'https://api.x.ai/v1' })
+    expect(JSON.stringify(state)).not.toContain('secret')
+  })
+
   it('rejects reload when ModelRuntime is not ready', async () => {
     const reply = vi.fn()
 
