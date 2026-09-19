@@ -1,4 +1,43 @@
 {
+  "updates": {
+    "title": "App updates",
+    "check": "Check for updates",
+    "details": "View update",
+    "download": "Download update",
+    "install": "Restart and install",
+    "openRelease": "Open releases",
+    "ignore": "Skip this version",
+    "releaseNotes": "Release notes",
+    "progress": "Update download progress",
+    "preparing": "Preparing download…",
+    "autoCheck": "Check for updates automatically",
+    "autoCheckHint": "Check after launch and every 6 hours. Saved immediately. Downloads and installation require your confirmation.",
+    "status": {
+      "loading": "Loading update status…",
+      "idle": "Current version {{current}}",
+      "checking": "Checking for updates…",
+      "up-to-date": "You have the latest stable version",
+      "available": "Version {{version}} is available",
+      "downloading": "Downloading {{version}}…",
+      "downloaded": "{{version}} is ready to install",
+      "installing": "Saving task state and starting the installer…",
+      "error": "Update check could not complete"
+    },
+    "mode": {
+      "development": "Development builds do not update automatically. Install a released build to use in-app updates.",
+      "manual": "This installation requires manual updates. Download a new version from the releases page."
+    },
+    "errors": {
+      "check-failed": "Could not check for updates. Check your connection and whether update metadata has been published, then retry.",
+      "no-release": "No stable release was found. Check the releases page.",
+      "invalid-update": "The update artifact source is not allowed. Download was blocked.",
+      "download-failed": "Download failed. Retry or download from the releases page.",
+      "install-failed": "The installer could not start. Retry or install manually.",
+      "busy": "A task is still running. Wait for it to finish before installing.",
+      "request-failed": "Could not read or perform the update operation. Please retry.",
+      "unsaved-settings": "Save or discard your settings changes before restarting to install."
+    }
+  },
   "title": "Settings",
   "search": "Search settings",
   "searchResults": "{{count}} matching categories",
@@ -91,7 +130,7 @@
     "fixedOrderDesc": "Keep the project list order stable when opening projects (new ones append to the end); off = most recently used first (default)",
     "noRecentProjects": "No recent projects yet",
     "noRecentProjectsHint": "Open a workspace to see it here",
-    "localMaintenance": "This app is maintained locally."
+    "localMaintenance": "Check and install app updates under About → App updates."
   },
   "runtime": {
     "sectionAgentRuntime": "Agent runtime",

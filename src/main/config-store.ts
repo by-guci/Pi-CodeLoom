@@ -5,6 +5,9 @@ import { DEFAULT_TIMELINE_MAX_AUTO_EXPANDED_TOOLS } from '@shared/timeline-setti
 import { nextRecentProjects } from './recent-projects'
 
 export interface StoreSchema {
+  appUpdateAutoCheck: boolean
+  appUpdateIgnoredVersion: string | null
+  appUpdateLastCheckedAt: number | null
   recentProjects: string[]
   /** 侧栏项目列表固定顺序（不随打开而置顶）；false = 最近使用排序（默认） */
   recentProjectsFixedOrder: boolean
@@ -70,6 +73,9 @@ type StoredSettings = StoreSchema & Partial<Record<typeof retiredSettingKeys[num
 const store = new Store<StoredSettings>({
   name: 'pi-desktop',
   defaults: {
+    appUpdateAutoCheck: true,
+    appUpdateIgnoredVersion: null,
+    appUpdateLastCheckedAt: null,
     recentProjects: [],
     recentProjectsFixedOrder: false,
     currentProject: null,

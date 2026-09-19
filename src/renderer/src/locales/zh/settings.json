@@ -1,4 +1,43 @@
 {
+  "updates": {
+    "title": "应用更新",
+    "check": "检查更新",
+    "details": "查看更新",
+    "download": "下载更新",
+    "install": "重启并安装",
+    "openRelease": "前往发布页",
+    "ignore": "忽略此版本",
+    "releaseNotes": "更新说明",
+    "progress": "更新下载进度",
+    "preparing": "正在准备下载…",
+    "autoCheck": "自动检查更新",
+    "autoCheckHint": "启动后及每 6 小时检查一次；此项即时保存。下载和安装均由你确认。",
+    "status": {
+      "loading": "正在读取更新状态…",
+      "idle": "当前版本 {{current}}",
+      "checking": "正在检查新版本…",
+      "up-to-date": "已是最新正式版本",
+      "available": "发现新版本 {{version}}",
+      "downloading": "正在下载 {{version}}…",
+      "downloaded": "{{version}} 已下载，重启后安装",
+      "installing": "正在保存任务状态并启动安装程序…",
+      "error": "更新检查未完成"
+    },
+    "mode": {
+      "development": "开发模式不会自动更新。请安装发布版本以使用应用内更新。",
+      "manual": "此安装形式需要手动更新，请前往发布页下载新版本。"
+    },
+    "errors": {
+      "check-failed": "检查失败，请确认网络连接及该版本的更新文件是否已发布，然后重试。",
+      "no-release": "暂未找到正式发布版本，可前往发布页查看。",
+      "invalid-update": "更新文件的来源不符合要求，已停止下载。",
+      "download-failed": "下载失败，请重试或前往发布页下载。",
+      "install-failed": "安装程序未能启动，请重试或手动安装。",
+      "busy": "仍有任务正在运行，请等待任务完成后再安装。",
+      "request-failed": "无法读取或执行更新操作，请重试。",
+      "unsaved-settings": "还有未保存的设置，请先保存或放弃更改，再重启安装。"
+    }
+  },
   "title": "设置",
   "search": "搜索设置",
   "searchResults": "找到 {{count}} 个相关分类",
@@ -91,7 +130,7 @@
     "fixedOrderDesc": "打开项目时保持列表顺序不变（新项目追加到末尾）；关闭时按最近使用排序（默认）",
     "noRecentProjects": "暂无最近项目",
     "noRecentProjectsHint": "打开工作区后将出现在此",
-    "localMaintenance": "应用由本地维护。"
+    "localMaintenance": "版本检查与更新安装请前往「关于 → 应用更新」。"
   },
   "runtime": {
     "sectionAgentRuntime": "Agent 运行时",

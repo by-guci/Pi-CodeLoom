@@ -66,3 +66,4 @@ describe('prompt.abort session isolation', () => {
     expect(mocks.abort).toHaveBeenCalledWith('/sessions/current.jsonl')
   })
 })
+vi.mock('../../app-updater', () => ({ isAppUpdateInstalling: () => false }))

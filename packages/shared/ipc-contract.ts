@@ -1,6 +1,7 @@
 // IPC Contract - Complete typed method signatures for Renderer/Main/Worker
 
 import type { AppEvent } from './app-events'
+import type { AppUpdateState } from './app-update'
 import type { CompatibilityLevel } from './extension-types'
 import type { ModelAuthProjection } from './model-auth-projection'
 import type { SessionContextPreview } from './session-context-preview'
@@ -333,6 +334,13 @@ export interface IpcMethodMap {
   'extensions.setEnabled': { request: ExtensionsSetEnabledRequest; response: ExtensionsSetEnabledResponse }
   'registry.refresh': { request: RegistryRefreshRequest; response: RegistryRefreshResponse }
   'settings.get': { request: SettingsGetRequest; response: SettingsGetResponse }
+  'app.update.state': { request: Record<string, never>; response: AppUpdateState }
+  'app.update.check': { request: Record<string, never>; response: AppUpdateState }
+  'app.update.download': { request: Record<string, never>; response: AppUpdateState }
+  'app.update.install': { request: Record<string, never>; response: AppUpdateState }
+  'app.update.ignore': { request: Record<string, never>; response: AppUpdateState }
+  'app.update.autoCheck': { request: { enabled: boolean }; response: AppUpdateState }
+  'app.update.openRelease': { request: Record<string, never>; response: { ok: boolean } }
   'settings.set': { request: SettingsSetRequest; response: SettingsSetResponse }
   'sdk.upgradeGlobal': { request: SdkUpgradeGlobalRequest; response: SdkUpgradeGlobalResponse }
   'desktop.appName': { request: Record<string, never>; response: { name: string; version: string; electron?: string; chrome?: string; node?: string; platform?: string; arch?: string } }

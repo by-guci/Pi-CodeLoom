@@ -1,5 +1,12 @@
 /** Renderer preload allowlist — sync with registerHandler / ipcMain.handle in Main. */
 export const IPC_INVOKE_CHANNELS = [
+  'ipc:app.update.state',
+  'ipc:app.update.check',
+  'ipc:app.update.download',
+  'ipc:app.update.install',
+  'ipc:app.update.ignore',
+  'ipc:app.update.autoCheck',
+  'ipc:app.update.openRelease',
   'ipc:adapter.action.run',
   'ipc:adapter.config.get',
   'ipc:adapter.config.set',

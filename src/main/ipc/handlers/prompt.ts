@@ -1,4 +1,5 @@
 import { workerManager } from '../../worker-manager'
+import { isAppUpdateInstalling } from '../../app-updater'
 import { ensureWorkerSessionBound } from '../../session-bind-state'
 import { normalizeSessionKey } from '../../worker-session-key'
 import { registerHandler, registerHandlerWithSchema } from '../registry'
@@ -7,6 +8,7 @@ import { clipboardWriteTempImageSchema, promptTextSchema } from '../schemas'
 
 export function registerPromptHandlers(): void {
   const bindBeforePrompt = async (sessionFile?: string) => {
+    if (isAppUpdateInstalling()) throw new Error('APP_UPDATE_INSTALLING')
     return ensureWorkerSessionBound(
       (f, o) =>
         workerManager.loadSession(f, {

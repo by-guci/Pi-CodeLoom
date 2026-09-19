@@ -1,6 +1,7 @@
 // AppEvent - Unified event model for Renderer/Main/Worker
 
 import type { CompletionOutcome } from './completion-preview'
+import type { AppUpdateState } from './app-update'
 import type { AdapterWidgetProjection, AdapterWidgetProtocol } from './adapter-widget'
 
 export interface AppEventBase {
@@ -134,6 +135,7 @@ export interface SdkRuntimeChangedEvent {
 }
 
 export type AppEvent =
+  | { type: 'app-update'; state: AppUpdateState }
   | MessageEvent
   | ToolEvent
   | FileEvent

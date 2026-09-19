@@ -58,6 +58,7 @@ jobs:
             dist/*Setup*.exe
             dist/*Portable*.exe
             dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: error
 
   build-mac:
@@ -161,6 +162,7 @@ jobs:
             dist/*.dmg
             dist/*.zip
             dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: error
 
   build-linux:
@@ -207,6 +209,7 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: error
 
   release:
@@ -217,6 +220,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify tag matches app version
+        run: |
+          node -e 'const expected = "v" + require("./package.json").version; if (process.env.GITHUB_REF_NAME !== expected) throw new Error("Release tag must match " + expected)'
+
       - name: Download all platform artifacts
         uses: actions/download-artifact@v4
         with:
@@ -224,9 +231,11 @@ jobs:
           pattern: pi-desktop-*
           merge-multiple: true
 
-      - name: Prepare release assets (no auto-update metadata)
+      - name: Verify auto-update metadata
         run: |
-          find release-assets -type f \( -name 'latest.yml' -o -name 'latest-mac.yml' -o -name 'latest-linux.yml' \) -delete
+          test -s release-assets/latest.yml
+          test -s release-assets/latest-mac.yml
+          test -s release-assets/latest-linux.yml
           find release-assets -type f | sort
 
       - name: Generate SBOM

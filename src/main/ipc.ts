@@ -15,10 +15,12 @@ import { registerCommandsSlashHandlers } from './ipc/handlers/commands-slash'
 import { registerPiSdkHandlers } from './ipc/handlers/pi-sdk'
 import { registerWslHandlers } from './ipc/handlers/wsl'
 import { registerDesktopChromeHandlers } from './ipc/handlers/desktop-chrome'
+import { registerAppUpdateHandlers } from './ipc/handlers/app-update'
 
 export { registerHandler, sendEvent } from './ipc/registry'
 
 export function registerAllHandlers(): void {
+  registerAppUpdateHandlers()
   registerDialogHandlers()
   registerWorkspaceFsHandlers()
   registerWorkspaceHandlers()

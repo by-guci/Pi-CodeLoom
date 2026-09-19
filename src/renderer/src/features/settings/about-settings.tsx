@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ipcClient } from '@renderer/lib/ipc-client'
 import { SettingsPageHeader } from '@renderer/features/settings/settings-shell'
 import { SettingRow, SettingsSection } from '@renderer/features/settings/settings-page-shared'
+import { AppUpdatePanel } from './app-update-panel'
 
 type AppInfo = {
   name?: string
@@ -39,6 +40,9 @@ export function AboutSettings() {
         <SettingRow label={t('settings:about.platform')}>
           <span className="font-mono text-xs">{[info?.platform, info?.arch].filter(Boolean).join(' / ') || '—'}</span>
         </SettingRow>
+      </SettingsSection>
+      <SettingsSection title={t('settings:updates.title')}>
+        <AppUpdatePanel />
       </SettingsSection>
       <SettingsSection title={t('settings:about.sectionRuntime')}>
         <SettingRow label="Electron">

@@ -1,9 +1,9 @@
 import type { AppEvent } from './app-events'
 
-export type SessionScopedAppEvent = Exclude<AppEvent, { type: 'sdk-install-progress' | 'sdk-runtime-changed' }>
+export type SessionScopedAppEvent = Exclude<AppEvent, { type: 'sdk-install-progress' | 'sdk-runtime-changed' | 'app-update' }>
 
 export function isSessionScopedAppEvent(event: AppEvent): event is SessionScopedAppEvent {
-  return event.type !== 'sdk-install-progress' && event.type !== 'sdk-runtime-changed'
+  return event.type !== 'sdk-install-progress' && event.type !== 'sdk-runtime-changed' && event.type !== 'app-update'
 }
 
 export function appEventSessionId(event: AppEvent): string | undefined {

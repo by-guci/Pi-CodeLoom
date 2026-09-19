@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CompletionCard } from './completion-notification-controller'
 
+const updates = vi.hoisted(() => ({ installing: false, initialize: vi.fn(), stop: vi.fn() }))
+vi.mock('./app-updater', () => ({
+  initializeAppUpdater: updates.initialize,
+  isAppUpdateInstalling: () => updates.installing,
+  stopAppUpdateChecks: updates.stop,
+}))
+
 const electron = await vi.hoisted(async () => {
   const { EventEmitter } = await import('node:events')
   const windows: FakeWindow[] = []
@@ -130,6 +137,9 @@ let initialStdoutListeners: ErrorListener[]
 let initialStderrListeners: ErrorListener[]
 
 beforeEach(() => {
+  updates.installing = false
+  updates.initialize.mockClear()
+  updates.stop.mockClear()
   vi.resetModules()
   vi.useFakeTimers()
   vi.stubEnv('PI_E2E', '1')
@@ -199,6 +209,16 @@ function card(notificationId = 'notification-1'): CompletionCard {
 }
 
 describe('main window and notification lifecycle', () => {
+  it('lets an explicit update quit complete without replacing it with app.exit', async () => {
+    const runtime = await start('win32')
+    updates.installing = true
+    const event = { preventDefault: vi.fn() }
+    electron.app.emit('before-quit', event)
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(electron.app.exit).not.toHaveBeenCalled()
+    expect(updates.stop).toHaveBeenCalledOnce()
+    expect(runtime.main.isDestroyed()).toBe(false)
+  })
   it('destroys an expired hidden notification host when the main window closes on Windows', async () => {
     const runtime = await start('win32')
     await runtime.presentCompletionCard(card(), 'custom')

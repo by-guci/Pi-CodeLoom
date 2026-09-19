@@ -30,6 +30,7 @@ import { normalizeTimelineMaxAutoExpandedTools } from '@shared/timeline-settings
 import { SidePanelHost } from '@renderer/features/side-panels/side-panel-host'
 import { ExtensionUIHost } from '@renderer/features/extension-ui/extension-ui-host'
 import { AppToaster } from '@renderer/components/app/app-toaster'
+import { AppUpdateNotice } from '@renderer/features/shell/app-update-notice'
 import { markExtensionNotifyAppReady } from '@renderer/lib/extension-notify-policy'
 import {
   hydrateCustomCssOverrideFromSettings,
@@ -288,6 +289,8 @@ export default function App() {
             </ErrorBoundary>
           </div>
         </div>
+        <AppUpdateNotice />
+        <AppToaster />
         {paletteAndShortcuts}
         <CloseDecisionDialog />
       </ErrorBoundary>
@@ -370,6 +373,7 @@ export default function App() {
           }
         />
       </div>
+      <AppUpdateNotice />
       <AppToaster />
       <ExtensionUIHost />
       <CloseDecisionDialog />

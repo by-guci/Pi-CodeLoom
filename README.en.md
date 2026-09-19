@@ -126,7 +126,7 @@ Desktop interaction support depends on the extension's adapter; see the catalog 
 
 Bug reports, suggestions, and pull requests are welcome. Open an [issue](https://github.com/by-guci/Pi-CodeLoom/issues) with the app version, operating system, reproduction steps, and sanitized logs.
 
-In-app update notifications and automatic installation are not currently integrated. Check this repository's Releases for future versions.
+Updates use `electron-updater`. Open **Settings → About → App updates** to check, download, and restart to install. Automatic checks, download progress, retries, and skipping versions are supported; portable builds provide manual download links. First install a released build that includes the updater. See [Release and update instructions](./doc/RELEASING.md) for the publishing workflow and platform requirements.
 
 ## Credits and license
 

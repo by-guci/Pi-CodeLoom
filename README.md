@@ -126,7 +126,7 @@ npm run package:win   # 生成 Windows 安装版和便携版
 
 欢迎通过 [Issues](https://github.com/by-guci/Pi-CodeLoom/issues) 提交问题或建议，也欢迎提交 Pull Request。报告问题时请附上应用版本、操作系统、复现步骤和经过脱敏的日志。
 
-当前版本尚未接入应用内的新版本更新提醒或自动安装；请通过本仓库 Releases 查看后续版本。
+已接入 `electron-updater`：在 **设置 → 关于 → 应用更新** 中检查版本、下载更新并确认重启安装。支持启动后自动检查、下载进度、失败重试和忽略版本；便携版提供手动下载入口。首次使用需安装包含更新模块的发布版本。发布步骤与平台要求见 [版本发布与更新](./doc/RELEASING.md)。
 
 ## 致谢与许可证
 

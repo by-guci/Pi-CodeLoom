@@ -17,6 +17,7 @@ import {
 import { notifyForegroundChanged } from './completion-notification-events'
 import { disposeCompletionDelivery, focusCompletionNotificationHost } from './completion-notification-delivery'
 import { isCompletionNotificationShortcut } from './completion-notification-shortcut'
+import { initializeAppUpdater, isAppUpdateInstalling, stopAppUpdateChecks } from './app-updater'
 // Prevent EPIPE / write errors from crashing the main process
 process.stdout?.on?.('error', () => {})
 process.stderr?.on?.('error', () => {})
@@ -94,6 +95,13 @@ app.whenReady().then(() => {
   createMenu()
   ensureAppTray()
   initializeCompletionNotifications()
+  initializeAppUpdater({
+    busy: () => workerManager.hasActiveTurns,
+    prepareInstall: async () => {
+      await workerManager.stop()
+      sessionPreviewProcess.stop()
+    },
+  })
 
   // CSP: inject Content-Security-Policy header in production (skip dev for Vite HMR)
   if (!is.dev) {
@@ -186,6 +194,11 @@ app.on('before-quit', (event) => {
   // Keep the tray alive while the user decides so a hidden window remains reachable.
   if (!guardAppQuit(event)) return
   destroyAppTray()
+  if (isAppUpdateInstalling()) {
+    stopAppUpdateChecks()
+    disposeCompletionNotifications()
+    return
+  }
   if (isQuittingGracefully) return
   event.preventDefault()
   void gracefulShutdownWorkers().finally(() => {
