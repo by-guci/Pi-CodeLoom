@@ -40,6 +40,10 @@ export function registerSettingsHandlers(): void {
       return { key: req.key, value: next }
     }
     configStore.set(key, req.value as StoreSchema[typeof key])
+    if (key === 'theme' || key === 'customTheme') {
+      const { refreshCompletionNotificationTheme } = await import('../../completion-notification-delivery')
+      refreshCompletionNotificationTheme()
+    }
     return { key: req.key, value: req.value }
   })
 

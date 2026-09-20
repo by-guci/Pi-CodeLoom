@@ -54,6 +54,7 @@ export function applyLookupSpec(entry: LocalModelEntry, spec: {
   input?: ('text' | 'image')[]
   contextWindow?: number
   maxTokens?: number
+  thinkingLevelMap?: Record<string, string | null>
 }): LocalModelEntry {
   const next: LocalModelEntry = {
     ...entry,
@@ -63,7 +64,7 @@ export function applyLookupSpec(entry: LocalModelEntry, spec: {
     maxTokens: spec.maxTokens ?? entry.maxTokens,
   }
   if (spec.name && (!entry.name || entry.name === entry.id)) next.name = spec.name
-  if (spec.reasoning && !entry.thinkingLevelMap) next.thinkingLevelMap = { high: 'high' }
+  if (spec.reasoning) next.thinkingLevelMap = { ...(spec.thinkingLevelMap ?? { high: 'high' }), ...entry.thinkingLevelMap }
   if (!spec.reasoning) next.thinkingLevelMap = undefined
   return next
 }

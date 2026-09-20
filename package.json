@@ -1,6 +1,6 @@
 {
   "name": "pi-desktop",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "Pi-CodeLoom - 桌面端 AI Agent GUI",
   "main": "./out/main/index.js",
   "author": "pi-desktop",

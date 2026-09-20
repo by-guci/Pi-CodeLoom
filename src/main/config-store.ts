@@ -34,6 +34,7 @@ export interface StoreSchema {
   language: 'zh' | 'en'
   /** 启动时打开上次项目 */
   autoOpenLastProject: boolean
+  closeWindowAction: 'quit' | 'tray'
   /** 全局：用户提醒是否播放提示音 */
   alertSoundEnabled: boolean
   /** 全局：用户提醒是否使用系统通知 */
@@ -100,6 +101,7 @@ const store = new Store<StoredSettings>({
     rightPanelOrder: [],
     language: 'zh',
     autoOpenLastProject: true,
+    closeWindowAction: 'quit',
     alertSoundEnabled: true,
     alertNotificationEnabled: true,
     alertOnExtensionUi: true,

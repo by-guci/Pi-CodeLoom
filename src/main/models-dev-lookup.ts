@@ -17,7 +17,7 @@ export type ModelsDevEntry = {
 
 export type ModelCapabilitySpec = Pick<
   PiModelsModelConfig,
-  'name' | 'reasoning' | 'input' | 'contextWindow' | 'maxTokens'
+  'name' | 'reasoning' | 'input' | 'contextWindow' | 'maxTokens' | 'thinkingLevelMap'
 >
 
 type Catalog = Record<string, ModelsDevEntry>
@@ -101,7 +101,7 @@ export function applyCapabilitySpec(
     maxTokens: spec.maxTokens ?? entry.maxTokens,
   }
   if (spec.name && (!entry.name || entry.name === entry.id)) next.name = spec.name
-  if (spec.reasoning && !entry.thinkingLevelMap) next.thinkingLevelMap = { high: 'high' }
+  if (spec.reasoning) next.thinkingLevelMap = { ...(spec.thinkingLevelMap ?? { high: 'high' }), ...entry.thinkingLevelMap }
   if (!spec.reasoning) next.thinkingLevelMap = undefined
   return next
 }

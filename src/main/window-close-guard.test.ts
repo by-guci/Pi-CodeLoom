@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const workerState = vi.hoisted(() => ({ hasActiveTurns: false }))
 const windowState = vi.hoisted(() => ({ missing: false }))
+const closeSettings = vi.hoisted(() => ({ action: 'quit', tray: true }))
+vi.mock('./config-store', () => ({ configStore: { get: () => closeSettings.action } }))
+vi.mock('./tray', () => ({ hasAppTray: () => closeSettings.tray }))
 
 const appMock = vi.hoisted(() => ({ on: vi.fn(), quit: vi.fn() }))
 
@@ -36,6 +39,7 @@ const winMock = vi.hoisted(() => {
     show: vi.fn(),
     focus: vi.fn(),
     close: vi.fn(),
+    hide: vi.fn(),
   }
   return { instance }
 })
@@ -57,6 +61,9 @@ describe('window-close-guard', () => {
   beforeEach(() => {
     __resetWindowCloseGuardForTest()
     workerState.hasActiveTurns = false
+    closeSettings.action = 'quit'
+    closeSettings.tray = true
+    winMock.instance.hide.mockReset()
     windowState.missing = false
     appMock.on.mockReset()
     appMock.quit.mockReset()
@@ -84,6 +91,34 @@ describe('window-close-guard', () => {
     expect(e.preventDefault).toHaveBeenCalled()
     expect(winMock.instance.close).toHaveBeenCalled()
     expect(winMock.instance.webContents.send).not.toHaveBeenCalled()
+  })
+
+  it('hides to an available Windows tray without interrupting active turns', () => {
+    vi.stubGlobal('process', { ...process, platform: 'win32' })
+    closeSettings.action = 'tray'
+    workerState.hasActiveTurns = true
+    closeHandler?.(makeEvent())
+    expect(winMock.instance.hide).toHaveBeenCalledOnce()
+    expect(winMock.instance.close).not.toHaveBeenCalled()
+    expect(winMock.instance.webContents.send).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
+  it('falls back to normal close if the tray is unavailable', () => {
+    closeSettings.action = 'tray'
+    closeSettings.tray = false
+    closeHandler?.(makeEvent())
+    expect(winMock.instance.hide).not.toHaveBeenCalled()
+    expect(winMock.instance.close).toHaveBeenCalled()
+  })
+
+  it('does not turn an explicit app quit into hiding to the tray', () => {
+    closeSettings.action = 'tray'
+    expect(guardAppQuit(makeEvent())).toBe(true)
+    const event = makeEvent()
+    closeHandler?.(event)
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(winMock.instance.hide).not.toHaveBeenCalled()
   })
 
   it('intercepts close and asks the renderer while a turn is running', () => {

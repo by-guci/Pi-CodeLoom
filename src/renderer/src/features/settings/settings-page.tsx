@@ -24,8 +24,9 @@ import { AboutSettings } from '@renderer/features/settings/about-settings'
 import { ExtensionsSettings } from '@renderer/features/settings/settings-extensions-panel'
 import { SettingsSearchContext } from './settings-page-shared'
 import { AdaptersSettings } from '@renderer/features/settings/settings-adapters-panel'
+import { PackageStorePanel } from './package-store-panel'
 
-type SettingsPage = 'general' | 'appearance' | 'rightPanels' | 'pi' | 'models' | 'skills' | 'prompts' | 'extensions' | 'adapters' | 'about'
+type SettingsPage = 'general' | 'appearance' | 'rightPanels' | 'pi' | 'models' | 'skills' | 'prompts' | 'extensions' | 'adapters' | 'about' | 'packageStore'
 
 type NavGroup = { key: string; labelKey: string; pages: { key: SettingsPage; icon: AppIconComponent }[] }
 
@@ -52,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
     key: 'resources',
     labelKey: 'settings:nav.groupResources',
     pages: [
+      { key: 'packageStore', icon: Boxes },
       { key: 'skills', icon: Zap },
       { key: 'prompts', icon: MessageSquareText },
       { key: 'extensions', icon: Puzzle },
@@ -60,7 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
-const WIDE_PAGES: SettingsPage[] = ['rightPanels', 'pi', 'models', 'skills', 'prompts', 'extensions', 'adapters']
+const WIDE_PAGES: SettingsPage[] = ['rightPanels', 'pi', 'models', 'skills', 'prompts', 'extensions', 'adapters', 'packageStore']
 
 export function SettingsPage() {
   const { t } = useTranslation()
@@ -166,6 +168,7 @@ export function SettingsPage() {
             {page === 'skills' && <SkillsSettingsPanel />}
             {page === 'prompts' && <PromptsSettingsPanel />}
             {page === 'extensions' && <ExtensionsSettings />}
+            {page === 'packageStore' && <PackageStorePanel />}
             {page === 'adapters' && <AdaptersSettings />}
             {page === 'about' && <AboutSettings />}
             </>}

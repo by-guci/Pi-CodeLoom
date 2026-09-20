@@ -156,6 +156,33 @@ describe('ModelPicker runtime confirmation', () => {
     expect(invoke.mock.calls.filter(([method]) => method === 'model.set')).toEqual([])
   })
 
+  it('replaces a stale MAX preselection with a supported level for the new model', async () => {
+    useUIStore.setState({ historySessionFile: null, runState: { ...useUIStore.getState().runState, thinkingLevel: 'max' } })
+    invoke.mockImplementation(async (method) => method === 'model.list'
+      ? { models: [{ provider: 'xai', id: 'grok-4.6', available: true }] }
+      : { model: 'xai/grok-4.6', options: [{ level: 'low' }, { level: 'high' }, { level: 'xhigh' }] })
+    render(<ModelPicker />)
+    fireEvent.click(await screen.findByRole('button', { name: /xai/i }))
+    fireEvent.click(screen.getByRole('button', { name: /grok-4.6/i }))
+    await waitFor(() => expect(useUIStore.getState().runState.thinkingLevel).toBe('high'))
+    expect(invoke).not.toHaveBeenCalledWith('thinkingLevel.set', expect.anything())
+  })
+
+  it('does not let delayed preselection capabilities overwrite another session', async () => {
+    useUIStore.setState({ historySessionFile: null })
+    let finish!: (value: unknown) => void
+    invoke.mockImplementation(async (method) => method === 'model.list'
+      ? { models: [{ provider: 'xai', id: 'grok-4.6', available: true }] }
+      : new Promise((resolve) => { finish = resolve }))
+    render(<ModelPicker />)
+    fireEvent.click(await screen.findByRole('button', { name: /xai/i }))
+    fireEvent.click(screen.getByRole('button', { name: /grok-4.6/i }))
+    useUIStore.setState({ historySessionFile: 'C:/sessions/other.jsonl', runState: { ...useUIStore.getState().runState, model: 'other/model', thinkingLevel: 'max' } })
+    finish({ model: 'xai/grok-4.6', options: [{ level: 'high' }] })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(useUIStore.getState().runState.thinkingLevel).toBe('max')
+  })
+
   it('restores the confirmed runtime model when switching fails', async () => {
     invoke.mockImplementation(async (method) => {
       if (method === 'model.list') {

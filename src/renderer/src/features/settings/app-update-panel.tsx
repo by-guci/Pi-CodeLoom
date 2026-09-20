@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Switch } from '@renderer/components/ui/switch'
 import { appUpdateAction, useAppUpdateStore } from '@renderer/lib/app-update-store'
 import { btnCompact, btnOutline, btnPrimary } from './settings-controls'
+import { AppReleaseNotes } from './app-release-notes'
 
 export function AppUpdatePanel() {
   const { t } = useTranslation()
@@ -32,7 +33,7 @@ export function AppUpdatePanel() {
       {state?.notes && state.version ? (
         <div className="space-y-2">
           <p className="text-xs font-medium text-foreground">{t('settings:updates.releaseNotes')}</p>
-          <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/30 p-3 font-sans text-sm leading-relaxed text-foreground-secondary">{state.notes}</pre>
+          <AppReleaseNotes notes={state.notes} label={t('settings:updates.releaseNotes')} />
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">

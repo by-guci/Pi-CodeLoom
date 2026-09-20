@@ -1,4 +1,23 @@
 {
+  "packageStore": {
+    "updateAll": "Update installed plugins", "updateAllConfirm": "Check {{count}} user-level npm packages and update those with available releases? Version constraints are preserved; exact pins and unchanged packages are skipped. Individual failures do not stop the remaining updates. Restart the app afterwards.",
+    "batchProgress": "Update progress: {{completed}} / {{total}}", "batchEmpty": "No updates detected within configured version constraints. Exact version pins are not upgraded automatically.", "batchDone": "Updates finished: {{success}} succeeded, {{failed}} failed or skipped.", "batchStatus": { "updated": "Updated", "failed": "Failed; retry individually", "skipped": "Skipped because a task is running" },
+    "latestVersion": "Latest on npm: {{version}}", "versionQueryFailed": "Lookup failed; check updates to retry", "versionNotChecked": "Not checked", "upToDate": "Up to date",
+    "title": "Plugin store", "description": "Browse community extensions, skills, prompts and themes from pi.dev and manage npm packages in your Pi user environment.",
+    "browse": "Discover", "installed": "Installed", "official": "Official catalog", "checkUpdates": "Check plugin updates", "refresh": "Refresh",
+    "search": "Search package name, author or capability", "searchButton": "Search", "type": "Package type", "sort": "Sort", "allTypes": "All types",
+    "extension": "Extension", "skill": "Skill", "prompt": "Prompt", "theme": "Theme", "downloads": "Most downloads", "recent": "Recently published", "name": "Name",
+    "translationNote": "Chinese summaries for selected packages are written by Pi-CodeLoom; original descriptions remain available. Other packages retain author descriptions. Catalog inclusion does not guarantee desktop compatibility.",
+    "original": "Author description", "noDescription": "No description. See the official details.", "downloadsCount": "{{count}} downloads/month",
+    "installedVersion": "Installed {{version}}", "missing": "files missing", "pinned": "Respects configured version constraint", "updateAvailable": "Update available",
+    "install": "Install", "update": "Update / repair", "remove": "Uninstall", "details": "Official details", "previous": "Previous", "next": "Next", "pagination": "Page {{page}} · {{total}} packages",
+    "installConfirm": "Install or update {{name}} in your Pi user environment? Community package install scripts and extensions can execute local code. Proceed only if you trust the author. Changes apply immediately; restart the app afterwards.",
+    "removeConfirm": "Uninstall {{name}} and remove it from your Pi user package configuration? Changes apply immediately. Conversations are retained.",
+    "loading": "Loading the official catalog…", "empty": "No packages found", "working": "Processing package operation…",
+    "loadFailed": "Could not load the catalog or installed packages. Check your connection and refresh.", "operationFailed": "Package operation failed. Check your network, npm and locked files, then retry.", "agentBusy": "A task is running. Wait for it to finish before changing packages.", "openFailed": "Could not open the official page.",
+    "restart": "Package changes saved. Exit and restart the app after your tasks finish to load the new plugin versions.",
+    "wsl": "Browsing is available in WSL mode. This version manages installations only in the host Pi environment. Use pi install, pi update or pi remove in your WSL terminal."
+  },
   "updates": {
     "title": "App updates",
     "check": "Check for updates",
@@ -45,6 +64,7 @@
   "searchHint": "Try notifications, shortcuts, themes or models, or clear the search to browse all settings.",
   "copied": "Copied",
   "nav": {
+    "packageStore": "Plugin store",
     "groupApp": "App",
     "groupAgent": "Agent",
     "groupResources": "Resources",
@@ -64,6 +84,10 @@
     "description": "After changes, use \"Save\" at the bottom to write to local config.",
     "startup": "Startup",
     "openLastProject": "Reopen last project on launch",
+    "closeWindowAction": "When closing the main window",
+    "closeWindowActionDesc": "Choose what × does. Tasks continue when hidden to the tray. Quit in the tray menu still exits the app. Takes effect after saving.",
+    "closeWindowQuit": "Quit application",
+    "closeWindowTray": "Minimize to system tray",
     "openLastProjectDesc": "Automatically restore the last opened project directory",
     "alert": "Alerts",
     "alertSectionDesc": "Manage sound, OS notifications, and interaction alerts that need immediate attention.",
@@ -96,7 +120,7 @@
       "custom": "Custom card",
       "system": "System toast"
     },
-    "alertDeliveryDesc": "Prefer the in-app card; fall back to the OS toast. Force the OS toast on Wayland if needed.",
+    "alertDeliveryDesc": "Auto prefers custom cards matching your saved palette and light/dark mode, falling back to system notifications if the card cannot be displayed.",
     "alertTimeout": "Card timeout (seconds)",
     "alertTimeoutDesc": "How long the custom card stays visible (5–60s). Hover pauses the timer.",
     "alertDnd": {

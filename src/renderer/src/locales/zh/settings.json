@@ -1,4 +1,23 @@
 {
+  "packageStore": {
+    "updateAll": "一键更新已安装插件", "updateAllConfirm": "检查当前用户环境中的 {{count}} 个 npm 插件，并逐个更新有可用新版的插件？保留版本约束，跳过固定版本和无需更新的包；单项失败不会中断其余更新。更新后需重启应用。",
+    "batchProgress": "批量更新进度：{{completed}} / {{total}}", "batchEmpty": "未检测到符合当前版本约束的可用更新；固定版本的插件不会自动升级。", "batchDone": "批量更新结束：成功 {{success}} 个，失败或跳过 {{failed}} 个。", "batchStatus": { "updated": "更新成功", "failed": "更新失败，可单独重试", "skipped": "有运行中任务，已跳过" },
+    "latestVersion": "npm 最新版本：{{version}}", "versionQueryFailed": "查询失败，请点击检查插件更新重试", "versionNotChecked": "待查询", "upToDate": "已是最新版本",
+    "title": "插件商店", "description": "浏览 pi.dev 官方目录中的社区扩展、技能、提示词和主题，管理当前 Pi 用户环境的 npm 插件包。",
+    "browse": "发现插件", "installed": "已安装", "official": "官方插件库", "checkUpdates": "检查插件更新", "refresh": "刷新",
+    "search": "搜索插件名称、作者或功能（支持常用中文关键词）", "searchButton": "搜索", "type": "插件类型", "sort": "排序", "allTypes": "全部类型",
+    "extension": "扩展", "skill": "技能", "prompt": "提示词", "theme": "主题", "downloads": "下载最多", "recent": "最近发布", "name": "名称排序",
+    "translationNote": "常用插件提供 Pi-CodeLoom 编写的中文简介，可展开查看作者原文。其他插件保留原文，无翻译调用费用。官方目录收录不代表每个扩展都适配桌面界面。",
+    "original": "作者原文", "noDescription": "暂无说明，可前往官方详情查看。", "downloadsCount": "每月下载 {{count}} 次",
+    "installedVersion": "已安装 {{version}}", "missing": "文件缺失", "pinned": "遵循已配置的版本约束", "updateAvailable": "有可用更新",
+    "install": "安装", "update": "更新／修复", "remove": "卸载", "details": "官方详情", "previous": "上一页", "next": "下一页", "pagination": "第 {{page}} 页 · 共 {{total}} 个",
+    "installConfirm": "将对当前用户环境中的 {{name}} 执行安装或更新。插件来自社区，安装脚本和扩展可运行本机代码，请确认信任该作者。操作即时执行，完成后请重启应用加载。",
+    "removeConfirm": "卸载 {{name}} 并从当前用户的 Pi 包配置中移除？操作即时执行，不删除对话记录。",
+    "loading": "正在加载官方插件库…", "empty": "没有找到插件", "working": "正在处理插件，请稍候…",
+    "loadFailed": "插件库或本地包状态加载失败，请检查网络后点击刷新。", "operationFailed": "插件操作失败，请检查网络、npm 和文件占用后重试。", "agentBusy": "有任务正在运行，请等待完成后再安装、更新或卸载插件。", "openFailed": "无法打开官方页面。",
+    "restart": "插件变更已保存。请在任务结束后彻底退出并重启应用，加载新的插件版本。",
+    "wsl": "当前为 WSL 环境，可浏览商店；这一版的安装与更新仅支持本机 Pi 环境。请在 WSL 终端使用 pi install、pi update 或 pi remove 管理包。"
+  },
   "updates": {
     "title": "应用更新",
     "check": "检查更新",
@@ -45,6 +64,7 @@
   "searchHint": "试试通知、快捷键、主题或模型，也可以清除搜索查看全部。",
   "copied": "已复制",
   "nav": {
+    "packageStore": "插件商店",
     "groupApp": "应用",
     "groupAgent": "Agent",
     "groupResources": "资源",
@@ -64,6 +84,10 @@
     "description": "修改后请使用页面底部「保存」写入本机配置。",
     "startup": "启动",
     "openLastProject": "启动时打开上次项目",
+    "closeWindowAction": "关闭主窗口时",
+    "closeWindowActionDesc": "点击右上角 × 时的行为。隐藏到托盘后任务继续运行；托盘菜单中的“退出”仍会退出应用。保存后生效。",
+    "closeWindowQuit": "退出应用",
+    "closeWindowTray": "最小化到系统托盘",
     "openLastProjectDesc": "自动恢复上次打开的项目目录",
     "alert": "提醒",
     "alertSectionDesc": "统一管理提示音、系统通知和需要立即处理的交互提醒。",
@@ -96,7 +120,7 @@
       "custom": "自定义卡片",
       "system": "系统通知"
     },
-    "alertDeliveryDesc": "自定义卡片优先；系统通知作为回退。Wayland 等环境可强制系统通知",
+    "alertDeliveryDesc": "自动模式优先使用自定义卡片，随已保存的界面配色和明暗模式变化；卡片无法显示时回退到系统通知。",
     "alertTimeout": "卡片停留（秒）",
     "alertTimeoutDesc": "自定义卡片自动关闭时间，5–60 秒；悬停会暂停",
     "alertDnd": {

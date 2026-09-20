@@ -35,6 +35,7 @@ With a configured model provider, Pi-CodeLoom can help read code, edit files, ru
 | Streaming and tool activity | Markdown, code, formulas, reasoning output, and collapsible tool calls. |
 | Files and review | File explorer, tabbed previews, drag-and-drop attachments, code diffs, and Git workspace information. |
 | Extensions and skills | Use the pi extension ecosystem with desktop adapters for supported tools and interactions. |
+| Plugin store | Browse the official pi.dev catalog, search and filter packages, install user-level npm packages, check for updates, and uninstall. Selected packages include editorial Chinese summaries. |
 | Notifications | Completion alerts, an inbox, background task status, and notification preferences. |
 | Bilingual interface | Switch between Chinese and English in settings. |
 
@@ -83,6 +84,12 @@ To stop development mode, quit the application and press `Ctrl+C` in the termina
 5. Choose a palette, appearance mode, and icon style in **Appearance**.
 
 Existing terminal pi configuration can be reused. Model credentials, extensions, and related pi settings typically live under `~/.pi/agent`; desktop preferences are stored in Electron's user data directory.
+
+### Plugin store
+
+Open **Settings → Plugin store** to browse the official catalog, or use **Installed** to check for updates, update/repair, and uninstall packages. Operations apply immediately. Exit and restart the app after installing or updating. Package changes are blocked while tasks are running, and existing version constraints are preserved. Selected packages have Pi-CodeLoom Chinese summaries with the author's original description available; no translation service is called.
+
+This version manages npm packages in the host Pi user environment. Continue using the Pi CLI for project-level, Git, and local-path packages. WSL mode supports browsing; manage installations in the corresponding WSL terminal. Catalog packages are community-authored, and desktop interaction support depends on each plugin and its adapters.
 
 ## Keyboard shortcuts
 

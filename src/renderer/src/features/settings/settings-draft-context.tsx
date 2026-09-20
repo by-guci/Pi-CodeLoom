@@ -54,6 +54,7 @@ type SettingsDraftContextValue = {
   setCustomCssOverride: (override: CustomCssOverride) => void
   setLanguage: (l: LanguageChoice) => void
   setAutoOpenLastProject: (v: boolean) => void
+  setCloseWindowAction: (v: 'quit' | 'tray') => void
   setAlertSoundEnabled: (v: boolean) => void
   setAlertNotificationEnabled: (v: boolean) => void
   setAlertOnExtensionUi: (v: boolean) => void
@@ -237,6 +238,7 @@ export function SettingsDraftProvider({ children }: { children: ReactNode }) {
       setCustomCssOverride: (override) => patch((d) => ({ ...d, customCssOverride: override })),
       setLanguage: (l) => patch((d) => ({ ...d, language: l })),
       setAutoOpenLastProject: (v) => patch((d) => ({ ...d, autoOpenLastProject: v })),
+      setCloseWindowAction: (v) => patch((d) => ({ ...d, closeWindowAction: v })),
       setAlertSoundEnabled: (v) => patch((d) => ({ ...d, alertSoundEnabled: v })),
       setAlertNotificationEnabled: (v) => patch((d) => ({ ...d, alertNotificationEnabled: v })),
       setAlertOnExtensionUi: (v) => patch((d) => ({ ...d, alertOnExtensionUi: v })),

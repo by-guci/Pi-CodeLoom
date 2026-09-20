@@ -149,6 +149,8 @@ export const sdkInstallSchema = z.object({
 
 export const piModelsLookupSchema = z.object({
   ids: z.array(z.string().trim().min(1).max(256)).min(1).max(50),
+  provider: z.string().trim().min(1).max(256).optional(),
+  baseUrl: z.string().trim().url().max(4096).optional(),
 })
 const hexColorSchema = z.string().regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/)
 const fontNameSchema = z
@@ -184,6 +186,7 @@ const settingsValueSchemas: Record<string, z.ZodTypeAny> = {
   recentProjects: z.array(z.string()),
   recentProjectsFixedOrder: z.boolean(),
   autoOpenLastProject: z.boolean(),
+  closeWindowAction: z.enum(['quit', 'tray']),
   alertSoundEnabled: z.boolean(),
   alertNotificationEnabled: z.boolean(),
   alertOnExtensionUi: z.boolean(),

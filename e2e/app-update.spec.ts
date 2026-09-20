@@ -13,12 +13,13 @@ test('real electron-updater checks metadata, rejects a corrupt download, retries
   test.skip(process.platform !== 'win32', 'Exercises the Windows NSIS updater; no installer is executed.')
   const artifact = Buffer.alloc(2 * 1024 * 1024, 42)
   const sha512 = createHash('sha512').update(artifact).digest('base64')
+  const releaseNotes = '<h2>Pi-CodeLoom v1.0.8</h2><p>本次更新重点优化 Thinking（思考等级）选择，让不同模型展示各自支持的选项。</p><h3>✨ 新增</h3><ul><li>根据当前模型、供应商及 Pi 运行环境，自动筛选可用的思考等级。</li><li>仅支持思考开关的模型显示 ON／OFF。</li></ul><h3>🐛 修复</h3><ul><li>修复选择的思考等级与实际生效等级不一致的问题。</li><li>修复快速切换模型或会话时，旧请求覆盖当前菜单和选择的问题。</li></ul><h3>⚡ 优化</h3><ul><li>增加能力查询加载提示、失败重试和能力来源说明。</li></ul><script>window.releaseNotesExecuted = true</script><img src="https://example.invalid/pixel" onerror="window.releaseNotesExecuted = true">'
   let corrupt = true
   let downloadRequests = 0
   const server = createServer((request, response) => {
     if (request.url?.startsWith('/latest.yml')) {
       response.writeHead(200, { 'Content-Type': 'text/yaml' })
-      response.end(`version: 1.0.8\nfiles:\n  - url: Pi-CodeLoom-Setup-1.0.8-x64.exe\n    sha512: ${sha512}\n    size: ${artifact.length}\npath: Pi-CodeLoom-Setup-1.0.8-x64.exe\nsha512: ${sha512}\nreleaseDate: '2026-09-19T00:00:00.000Z'\nreleaseNotes: '更新测试：支持版本提醒、下载进度与安全重启。'\n`)
+      response.end(`version: 1.0.8\nfiles:\n  - url: Pi-CodeLoom-Setup-1.0.8-x64.exe\n    sha512: ${sha512}\n    size: ${artifact.length}\npath: Pi-CodeLoom-Setup-1.0.8-x64.exe\nsha512: ${sha512}\nreleaseDate: '2026-09-19T00:00:00.000Z'\nreleaseNotes: ${JSON.stringify(releaseNotes)}\n`)
       return
     }
     if (request.url?.startsWith('/Pi-CodeLoom-Setup-1.0.8-x64.exe')) {
@@ -76,6 +77,18 @@ test('real electron-updater checks metadata, rejects a corrupt download, retries
     await expect(page.getByRole('button', { name: '检查更新' })).toBeEnabled()
     await page.getByRole('button', { name: '检查更新' }).click()
     await expect(page.getByRole('status').filter({ hasText: '发现新版本 1.0.8' })).toBeVisible()
+    const notes = page.getByRole('region', { name: '更新说明' })
+    await expect(notes.getByRole('heading', { name: 'Pi-CodeLoom v1.0.8' })).toBeVisible()
+    await expect(notes.getByRole('listitem')).toHaveCount(5)
+    await expect(notes).not.toContainText('<h2>')
+    await expect(notes.locator('script, img, [onerror]')).toHaveCount(0)
+    expect(await page.evaluate(() => 'releaseNotesExecuted' in window)).toBe(false)
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].showInactive())
+    await page.bringToFront()
+    for (const mode of ['light', 'dark']) {
+      await page.evaluate((dark) => document.documentElement.classList.toggle('dark', dark), mode === 'dark')
+      await notes.screenshot({ path: testInfo.outputPath(`release-notes-${mode}.png`), animations: 'disabled' })
+    }
     expect(downloadRequests).toBe(0)
     await page.getByRole('button', { name: '下载更新' }).click()
     await expect(page.getByRole('progressbar')).toBeVisible()

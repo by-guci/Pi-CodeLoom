@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { notificationHostPageHtml } from './notification-host-page'
 
 describe('notification host page', () => {
+  it('offers dismiss and open without the thirty-minute mute action', () => {
+    const html = notificationHostPageHtml()
+    expect(html).toContain('actions.append(dismiss, open)')
+    expect(html).not.toContain('card.copy.muteLabel')
+    expect(html).not.toContain("api.action(card.notificationId, 'mute')")
+  })
   it('exposes a focus request channel for the explicit keyboard entry', () => {
     const html = notificationHostPageHtml()
 

@@ -6,6 +6,8 @@ import { getMainWindow } from './window'
 
 let appTray: Tray | null = null
 
+export function hasAppTray(): boolean { return appTray !== null }
+
 function currentWindow(): BrowserWindow | undefined {
   const window = getMainWindow()
   return window && !window.isDestroyed() ? window : undefined

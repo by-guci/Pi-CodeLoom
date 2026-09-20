@@ -1,10 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { resolveThinkingOptions, runtimeThinkingLevels, type ThinkingModel } from './model-thinking'
+import { resolveThinkingOptions, runtimeThinkingLevels, thinkingMapFromOptions, type ThinkingModel } from './model-thinking'
 
 const grok: ThinkingModel = { provider: 'xai', id: 'grok-4.6', reasoning: true, thinkingLevelMap: { xhigh: 'xhigh', max: 'max' } }
 const levels = (result: ReturnType<typeof resolveThinkingOptions>) => result.options.map((option) => option.level)
 
 describe('model-specific thinking choices', () => {
+  it('enables Luna xhigh and max in the SDK configuration while excluding unsupported minimal', () => {
+    const record = { reasoning_options: [{ type: 'effort' as const, values: ['none', 'low', 'medium', 'high', 'xhigh', 'max'] }] }
+    const thinkingLevelMap = thinkingMapFromOptions(record.reasoning_options)
+    expect(thinkingLevelMap).toEqual({ off: 'none', minimal: null, low: 'low', medium: 'medium', high: 'high', xhigh: 'xhigh', max: 'max' })
+    const result = resolveThinkingOptions({ provider: '自建', id: 'gpt-5.6-luna', reasoning: true, thinkingLevelMap }, record)
+    expect(levels(result)).toEqual(['off', 'low', 'medium', 'high', 'xhigh', 'max'])
+    expect(result.limitedByRuntime).toBe(false)
+  })
+
+  it('does not invent effort mappings for budget or toggle models', () => {
+    expect(thinkingMapFromOptions([{ type: 'budget_tokens', min: 128 }])).toBeUndefined()
+    expect(thinkingMapFromOptions([{ type: 'toggle' }])).toBeUndefined()
+    expect(thinkingMapFromOptions([])).toBeUndefined()
+    expect(thinkingMapFromOptions([{ type: 'effort', values: ['vendor-special'] }])).toBeUndefined()
+  })
+
   it('only shows the documented Grok levels', () => {
     expect(levels(resolveThinkingOptions(grok, { reasoning: true, reasoning_options: [{ type: 'effort', values: ['low', 'medium', 'high', 'xhigh'] }] }))).toEqual(['low', 'medium', 'high', 'xhigh'])
   })

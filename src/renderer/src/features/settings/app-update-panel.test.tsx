@@ -55,13 +55,49 @@ describe('app update controls', () => {
     } finally { unregister() }
   })
 
-  it('uses the fixed release action for portable builds and renders release notes as text', () => {
+  it('uses the fixed release action for portable builds and blocks active release content', () => {
     useAppUpdateStore.setState({ state: { ...state, mode: 'manual', notes: '<img src=x onerror=alert(1)>' } })
     const { container } = render(<AppUpdatePanel />)
     expect(screen.queryByRole('button', { name: '下载更新' })).toBeNull()
     expect(container.querySelector('img')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '前往发布页' }))
     expect(mocks.invoke).toHaveBeenCalledWith('app.update.openRelease', {})
+  })
+
+  it('renders GitHub HTML release notes as headings and lists instead of source', () => {
+    useAppUpdateStore.setState({ state: { ...state, notes: '<h2>Pi-CodeLoom v1.0.8</h2><p>优化 Thinking（思考等级）选择。</p><h3>✨ 新增</h3><ul><li>按模型显示 <strong>Thinking</strong> 等级</li><li>仅支持开关的模型显示 ON／OFF</li></ul>' } })
+    const { container } = render(<AppUpdatePanel />)
+    expect(screen.getByRole('heading', { level: 2, name: 'Pi-CodeLoom v1.0.8' })).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(container.querySelector('strong')).toHaveTextContent('Thinking')
+    expect(container.textContent).not.toContain('<h2>')
+  })
+
+  it('formats Markdown metadata and preserves escaped code examples', () => {
+    useAppUpdateStore.setState({ state: { ...state, notes: '## 更新说明\n\n- **模型菜单**支持动态档位\n- 修复状态显示\n\n```html\n<h2>示例</h2>\n```' } })
+    const { container } = render(<AppUpdatePanel />)
+    expect(screen.getByRole('heading', { level: 2, name: '更新说明' })).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(container.querySelector('code')).toHaveTextContent('<h2>示例</h2>')
+  })
+
+  it('sanitizes remote HTML without dropping readable notes or enabling navigation', () => {
+    useAppUpdateStore.setState({ state: { ...state, notes: '<h2 id="app" style="position:fixed" onclick="alert(1)">安全更新</h2><script>alert(1)</script><iframe src="https://example.com"></iframe><img src="https://example.com/pixel" onerror="alert(1)"><svg onload="alert(1)"></svg><p>修复 A &amp; B</p><a href="javascript:alert(1)">危险链接</a><a href="file:///C:/Windows">本地链接</a><a href="https://github.com/by-guci/Pi-CodeLoom">项目地址</a><form><input autofocus onfocus="alert(1)"></form>' } })
+    const { container } = render(<AppUpdatePanel />)
+    expect(screen.getByRole('heading', { name: '安全更新' })).toBeInTheDocument()
+    expect(screen.getByText('修复 A & B')).toBeInTheDocument()
+    expect(container.querySelector('script, iframe, img, svg, input, form, a, [onclick], [onerror], [onload]')).toBeNull()
+    expect(container.querySelector('h2')).not.toHaveAttribute('style')
+    expect(container.querySelector('h2')).not.toHaveAttribute('id')
+    expect(container.textContent).toContain('项目地址')
+  })
+
+  it('keeps plain text line breaks and does not load Markdown images or links', () => {
+    useAppUpdateStore.setState({ state: { ...state, notes: '第一行\n第二行\n\n[项目地址](https://github.com/by-guci/Pi-CodeLoom)\n\n![追踪图片](https://example.com/pixel)' } })
+    const { container } = render(<AppUpdatePanel />)
+    expect(container.querySelector('br')).toBeInTheDocument()
+    expect(container.querySelector('a, img')).toBeNull()
+    expect(container.textContent).toContain('项目地址')
   })
 
   it('does not overwrite a newer progress event with an older initial snapshot', async () => {

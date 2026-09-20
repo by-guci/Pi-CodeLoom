@@ -1,6 +1,6 @@
-import { loadModelsDevCatalog } from './models-dev-lookup'
+import { loadModelsDevCatalog, lookupModelCapabilities } from './models-dev-lookup'
 import { z } from 'zod'
-import type { ReasoningOption } from '@shared/model-thinking'
+import { thinkingMapFromOptions, type ReasoningOption } from '@shared/model-thinking'
 
 export type ThinkingRecord = { reasoning?: boolean; reasoning_options?: ReasoningOption[] }
 export type ProviderCatalog = Record<string, { api?: string; models?: Record<string, ThinkingRecord> }>
@@ -48,8 +48,7 @@ async function providerCatalog(): Promise<ProviderCatalog> {
   return inflight
 }
 
-export async function lookupThinkingRecord(provider: string, id: string, baseUrl?: string): Promise<ThinkingRecord | undefined> {
-  const catalog = await providerCatalog()
+async function lookupExactThinkingRecord(catalog: ProviderCatalog, provider: string, id: string, baseUrl?: string): Promise<ThinkingRecord | undefined> {
   const direct = matchProviderThinking(catalog, provider, id, baseUrl)
   if (direct || catalog[provider.toLowerCase()]) return direct
   // Custom relay names may use an original provider/model ID. Never guess among relays.
@@ -60,4 +59,34 @@ export async function lookupThinkingRecord(provider: string, id: string, baseUrl
   if (matches.length !== 1 || !matches[0].id) return undefined
   const [lab, ...name] = matches[0].id.split('/')
   return validRecord(catalog[lab]?.models?.[name.join('/')])
+}
+
+function withoutDateSuffix(id: string): string | undefined {
+  // Only dated snapshots: -MMDD, -YYYYMMDD or -YYYY-MM-DD. Preserve variant names.
+  const match = id.match(/^(.+?)-(?:((?:19|20)\d{2})-?)?(\d{2})-?(\d{2})$/)
+  if (!match) return undefined
+  const [, base, year, month, day] = match
+  const date = new Date(Date.UTC(Number(year || 2000), Number(month) - 1, Number(day)))
+  return date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day) ? base : undefined
+}
+
+export async function lookupThinkingRecord(provider: string, id: string, baseUrl?: string): Promise<ThinkingRecord | undefined> {
+  const catalog = await providerCatalog()
+  const exact = await lookupExactThinkingRecord(catalog, provider, id, baseUrl)
+  if (exact) return exact
+  const base = withoutDateSuffix(id)
+  return base ? lookupExactThinkingRecord(catalog, provider, base, baseUrl) : undefined
+}
+
+export async function lookupModelCapabilitiesWithThinking(ids: string[], provider = '', baseUrl?: string) {
+  const result = await lookupModelCapabilities(ids)
+  if (!result.ok || !result.models) return result
+  const models = result.models
+  await Promise.all(Object.keys(models).map(async (id) => {
+    const record = await lookupThinkingRecord(provider, id, baseUrl).catch(() => undefined)
+    if (record?.reasoning === false) { models[id].reasoning = false; return }
+    const map = thinkingMapFromOptions(record?.reasoning_options)
+    if (map) { models[id].reasoning = true; models[id].thinkingLevelMap = map }
+  }))
+  return result
 }

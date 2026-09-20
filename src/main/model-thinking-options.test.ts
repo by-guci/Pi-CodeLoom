@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getModelThinkingOptions } from './model-thinking-options'
+vi.mock('./model-thinking-migration', () => ({ migrateLegacyModelThinking: vi.fn().mockResolvedValue(0) }))
 
 const mocks = vi.hoisted(() => ({ state: vi.fn(), sdk: vi.fn(), model: vi.fn(), record: vi.fn() }))
 vi.mock('electron', () => ({ app: { getPath: () => '/profile' } }))

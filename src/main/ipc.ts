@@ -16,10 +16,12 @@ import { registerPiSdkHandlers } from './ipc/handlers/pi-sdk'
 import { registerWslHandlers } from './ipc/handlers/wsl'
 import { registerDesktopChromeHandlers } from './ipc/handlers/desktop-chrome'
 import { registerAppUpdateHandlers } from './ipc/handlers/app-update'
+import { registerPackageStoreHandlers } from './ipc/handlers/package-store'
 
 export { registerHandler, sendEvent } from './ipc/registry'
 
 export function registerAllHandlers(): void {
+  registerPackageStoreHandlers()
   registerAppUpdateHandlers()
   registerDialogHandlers()
   registerWorkspaceFsHandlers()

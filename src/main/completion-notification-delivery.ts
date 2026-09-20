@@ -1,9 +1,11 @@
-import { BrowserWindow, Notification, ipcMain, screen } from 'electron'
+import { BrowserWindow, Notification, ipcMain, screen, nativeTheme } from 'electron'
+import { configStore } from './config-store'
+import { notificationThemeCss } from '@shared/notification-theme'
+import { DISABLE_CUSTOM_THEME_CLI_FLAG } from '@shared/custom-theme'
 import { join } from 'path'
 import { resolveAppIcon } from './app-icon'
 import { getMainWindow } from './window'
 import { readSessionMetaFromFile } from './session-file-meta'
-import { setCompletionDndUntil } from './completion-notification-settings'
 import {
   forgetNotificationTarget,
   rememberNotificationTarget,
@@ -43,6 +45,15 @@ function preferSystem(mode: DeliveryMode): boolean {
   return mode === 'system' || hostFailed
 }
 
+export function refreshCompletionNotificationTheme(): void {
+  if (!host || host.isDestroyed() || !hostReady) return
+  host.webContents.send('notification:theme', notificationThemeCss(
+    configStore.get('theme'),
+    process.argv.includes(DISABLE_CUSTOM_THEME_CLI_FLAG) ? null : configStore.get('customTheme'),
+    nativeTheme?.shouldUseDarkColors ?? false,
+  ))
+}
+
 function workArea() {
   return screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea
 }
@@ -53,6 +64,7 @@ function visibleCards(): ActiveCard[] {
 
 function sendUpdate(): void {
   if (!host || host.isDestroyed() || !hostReady) return
+  refreshCompletionNotificationTheme()
   host.webContents.send(
     'notification:update',
     visibleCards().map((card) => ({
@@ -102,6 +114,7 @@ function hideHost(): void {
 function ensureListeners(): void {
   if (listenersBound) return
   listenersBound = true
+  nativeTheme?.on('updated', refreshCompletionNotificationTheme)
   ipcMain.on('notification:ready', (event) => {
     if (!host || event.sender !== host.webContents) return
     hostReady = true
@@ -122,16 +135,11 @@ function ensureListeners(): void {
   })
   ipcMain.on(
     'notification:action',
-    (event, payload: { notificationId?: string; action?: 'open' | 'dismiss' | 'mute' }) => {
+    (event, payload: { notificationId?: string; action?: 'open' | 'dismiss' }) => {
       if (!host || event.sender !== host.webContents) return
       const id = String(payload?.notificationId || '')
       const action = payload?.action
-      if (!id || !action) return
-      if (action === 'mute') {
-        setCompletionDndUntil(Date.now() + 30 * 60_000)
-        dismissCard(id)
-        return
-      }
+      if (!id || (action !== 'open' && action !== 'dismiss')) return
       if (action === 'open') {
         void openNotificationTarget(id)
         dismissCard(id)

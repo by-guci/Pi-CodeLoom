@@ -1,10 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
+  onTheme(callback: (css: string) => void): () => void {
+    const handler = (_event: unknown, css: string): void => callback(css)
+    ipcRenderer.on('notification:theme', handler)
+    return () => ipcRenderer.off('notification:theme', handler)
+  },
   ready(): void {
     ipcRenderer.send('notification:ready')
   },
-  action(notificationId: string, action: 'open' | 'dismiss' | 'mute'): void {
+  action(notificationId: string, action: 'open' | 'dismiss'): void {
     ipcRenderer.send('notification:action', { notificationId, action })
   },
   hover(paused: boolean): void {

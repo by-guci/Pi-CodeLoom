@@ -39,6 +39,7 @@ export type SettingsDraft = {
   customCssOverride: CustomCssOverride
   language: LanguageChoice
   autoOpenLastProject: boolean
+  closeWindowAction?: 'quit' | 'tray'
   alertSoundEnabled: boolean
   alertNotificationEnabled: boolean
   alertOnExtensionUi: boolean
@@ -84,6 +85,7 @@ export function draftSignature(d: SettingsDraft): string {
     customCssOverride: d.customCssOverride,
     language: d.language,
     autoOpenLastProject: d.autoOpenLastProject,
+    closeWindowAction: d.closeWindowAction ?? 'quit',
     alertSoundEnabled: d.alertSoundEnabled,
     alertNotificationEnabled: d.alertNotificationEnabled,
     alertOnExtensionUi: d.alertOnExtensionUi,
@@ -122,6 +124,7 @@ export async function loadSettingsDraftFromDisk(i18nLanguage: string): Promise<S
     customCssOverride: normalizeCustomCssOverride(s.customCssOverride),
     language: normalizeLanguage(s.language, normalizeLanguage(i18nLanguage, 'zh')),
     autoOpenLastProject: s.autoOpenLastProject !== false,
+    closeWindowAction: s.closeWindowAction === 'tray' ? 'tray' : 'quit',
     alertSoundEnabled: s.alertSoundEnabled !== false,
     alertNotificationEnabled: s.alertNotificationEnabled !== false,
     alertOnExtensionUi: s.alertOnExtensionUi !== false,
@@ -235,6 +238,7 @@ export async function commitSettingsDraft(draft: SettingsDraft, i18n: I18n): Pro
   await ipcClient.invoke('settings.set', { key: 'customCssOverride', value: draft.customCssOverride })
   await ipcClient.invoke('settings.set', { key: 'language', value: draft.language })
   await ipcClient.invoke('settings.set', { key: 'autoOpenLastProject', value: draft.autoOpenLastProject })
+  await ipcClient.invoke('settings.set', { key: 'closeWindowAction', value: draft.closeWindowAction ?? 'quit' })
   await ipcClient.invoke('settings.set', { key: 'alertSoundEnabled', value: draft.alertSoundEnabled })
   await ipcClient.invoke('settings.set', { key: 'alertNotificationEnabled', value: draft.alertNotificationEnabled })
   await ipcClient.invoke('settings.set', { key: 'alertOnExtensionUi', value: draft.alertOnExtensionUi })

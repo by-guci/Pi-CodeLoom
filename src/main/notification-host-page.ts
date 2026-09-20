@@ -121,6 +121,7 @@ export function notificationHostPageHtml(): string {
       button { transition: none; }
     }
   </style>
+  <style id="notification-theme"></style>
 </head>
 <body>
   <div id="stack"></div>
@@ -128,6 +129,7 @@ export function notificationHostPageHtml(): string {
     const api = window.piNotify
     const stack = document.getElementById('stack')
     const playedSoundIds = new Set()
+    api.onTheme((css) => { document.getElementById('notification-theme').textContent = css })
     function beep() {
       try {
         const Ctx = window.AudioContext || window.webkitAudioContext
@@ -174,11 +176,7 @@ export function notificationHostPageHtml(): string {
         dismiss.className = 'ghost'
         dismiss.textContent = card.copy.dismissLabel
         dismiss.addEventListener('click', () => api.action(card.notificationId, 'dismiss'))
-        const mute = document.createElement('button')
-        mute.className = 'ghost'
-        mute.textContent = card.copy.muteLabel
-        mute.addEventListener('click', () => api.action(card.notificationId, 'mute'))
-        actions.append(dismiss, mute, open)
+        actions.append(dismiss, open)
         el.addEventListener('mouseenter', () => api.hover(true))
         el.addEventListener('mouseleave', () => api.hover(false))
         stack.append(el)

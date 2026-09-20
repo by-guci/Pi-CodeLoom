@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from 'electron'
 import { workerManager } from './worker-manager'
 import { getMainWindow } from './window'
+import { configStore } from './config-store'
+import { hasAppTray } from './tray'
 
 /**
  * Closing the window while an agent turn is running would abort the in-flight
@@ -16,6 +18,7 @@ import { getMainWindow } from './window'
  * bypasses are scoped to the window or quit attempt that the user approved.
  */
 let forceQuit = false
+let appQuitApproved = false
 let forceCloseWindows = new WeakSet<BrowserWindow>()
 let closeDecisionPending = false
 let decisionAckTimer: ReturnType<typeof setTimeout> | null = null
@@ -117,10 +120,14 @@ function startWaitAndClose(): void {
 
 export function installWindowCloseGuard(win: BrowserWindow): void {
   win.on('close', (event) => {
-    if (forceCloseWindows.has(win)) return
+    if (forceCloseWindows.has(win) || appQuitApproved) return
     event.preventDefault()
     if (waitPollTimer || closeDecisionPending) {
       // Already waiting or asking — repeated close clicks must not re-ask.
+      return
+    }
+    if (process.platform === 'win32' && configStore.get('closeWindowAction') === 'tray' && hasAppTray()) {
+      win.hide()
       return
     }
     if (workerManager.hasActiveTurns) {
@@ -137,18 +144,19 @@ export function installWindowCloseGuard(win: BrowserWindow): void {
  * false when the quit is being diverted to the close-decision flow.
  */
 export function guardAppQuit(event: { preventDefault: () => void }): boolean {
-  if (forceQuit) return true
+  if (forceQuit) { appQuitApproved = true; return true }
   if (waitPollTimer || closeDecisionPending) {
     // A decision is already pending — this repeated quit attempt is ignored.
     event.preventDefault()
     return false
   }
   if (workerManager.hasActiveTurns) {
-    if (!getWindow()) return true
+    if (!getWindow()) { appQuitApproved = true; return true }
     event.preventDefault()
     requestCloseDecision('app')
     return false
   }
+  appQuitApproved = true
   return true
 }
 
@@ -181,6 +189,7 @@ export function handleCloseDecisionShown(): void {
 /** Test-only reset of module-level guard state. */
 export function __resetWindowCloseGuardForTest(): void {
   forceQuit = false
+  appQuitApproved = false
   forceCloseWindows = new WeakSet<BrowserWindow>()
   closeDecisionPending = false
   clearDecisionAckTimer()

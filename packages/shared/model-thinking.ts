@@ -21,6 +21,20 @@ export type ModelThinkingOptions = {
   limitedByRuntime?: boolean
 }
 
+/** Translate documented effort values into the SDK's explicit capability map. */
+export function thinkingMapFromOptions(options?: ReasoningOption[]): Record<string, string | null> | undefined {
+  const effort = options?.find((option) => option.type === 'effort')
+  if (effort?.type !== 'effort') return undefined
+  const values = new Set(effort.values)
+  const map = Object.fromEntries(THINKING_LEVELS.map((level) => [
+    level, level === 'off' && values.has('none') ? 'none' : values.has(level) ? level : null,
+  ]))
+  if (!Object.values(map).some((value) => value !== null)) return undefined
+  // A separate toggle uses the provider's existing off behavior, not an invented effort value.
+  if (map.off === null && options?.some((option) => option.type === 'toggle')) delete map.off
+  return map
+}
+
 /** Mirrors the Pi SDK defaults for a model before its session has been started. */
 export function runtimeThinkingLevels(model: ThinkingModel): ThinkingLevel[] {
   if (model.reasoning === false) return ['off']

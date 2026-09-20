@@ -1,0 +1,26 @@
+import { afterEach, expect, it, vi } from 'vitest'
+afterEach(() => vi.unstubAllGlobals())
+it('fetches the scoped package latest tag and caches requests', async () => {
+  vi.resetModules()
+  const fetch = vi.fn(async () => ({ ok: true, json: async () => ({ version: '2.4.0' }) }))
+  vi.stubGlobal('fetch', fetch)
+  const api = await import('./package-latest-version')
+  expect(await api.fetchLatestPackageVersion('@author/plugin')).toEqual({ latestVersion: '2.4.0', latestVersionError: false })
+  await api.fetchLatestPackageVersion('@author/plugin')
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(fetch).toHaveBeenCalledWith('https://registry.npmjs.org/%40author%2Fplugin/latest', expect.anything())
+})
+it('reports failure separately and forced retry replaces it', async () => {
+  vi.resetModules()
+  const fetch = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue({ ok: true, json: async () => ({ version: '1.1.0' }) })
+  vi.stubGlobal('fetch', fetch)
+  const api = await import('./package-latest-version')
+  expect(await api.fetchLatestPackageVersion('plugin')).toEqual({ latestVersion: null, latestVersionError: true })
+  expect(await api.fetchLatestPackageVersion('plugin', true)).toEqual({ latestVersion: '1.1.0', latestVersionError: false })
+})
+it('does not mistake malformed metadata for a valid version', async () => {
+  vi.resetModules()
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ version: '<script>' }) }))
+  const api = await import('./package-latest-version')
+  expect((await api.fetchLatestPackageVersion('plugin')).latestVersionError).toBe(true)
+})

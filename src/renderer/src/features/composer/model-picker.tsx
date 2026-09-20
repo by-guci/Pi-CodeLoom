@@ -15,6 +15,7 @@ import {
   subscribeAvailableModels,
 } from '@renderer/lib/available-models-cache'
 import { sessionFilesEqual } from '@renderer/lib/session-file-key'
+import type { ModelThinkingOptions } from '@shared/model-thinking'
 
 type ModelRow = { id: string; provider: string; name?: string; available?: boolean }
 
@@ -94,8 +95,19 @@ export function ModelPicker() {
   const pick = async (m: ModelRow) => {
     const requestedModel = `${m.provider}/${m.id}`
     if (!sessionFile) {
-      useUIStore.getState().setRunState({ model: requestedModel })
+      const token = ++modelSwitchToken
+      const previousLevel = useUIStore.getState().runState.thinkingLevel
+      useUIStore.getState().setRunState({ model: requestedModel, thinkingLevel: undefined })
       setOpen(false)
+      try {
+        const capabilities: ModelThinkingOptions = await ipcClient.invoke('thinkingLevel.options', { model: requestedModel })
+        const now = useUIStore.getState()
+        if (token !== modelSwitchToken || now.historySessionFile || now.runState.model !== requestedModel || now.runState.thinkingLevel != null) return
+        if (capabilities?.model !== requestedModel || !Array.isArray(capabilities.options)) return
+        const levels: string[] = capabilities.options.map((option) => option.level)
+        const level = previousLevel && levels.includes(previousLevel) ? previousLevel : levels.includes('high') ? 'high' : levels[0]
+        now.setRunState({ thinkingLevel: level })
+      } catch { /* Keep the stale level cleared when capabilities cannot be loaded. */ }
       return
     }
     const targetFile = sessionFile

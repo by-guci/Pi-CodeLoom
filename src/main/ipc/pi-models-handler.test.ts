@@ -46,8 +46,8 @@ vi.mock('../pi-models-json', () => ({
   fetchRemoteModelIds: vi.fn(),
 }))
 
-vi.mock('../models-dev-lookup', () => ({
-  lookupModelCapabilities: mocks.lookupModelCapabilities,
+vi.mock('../models-dev-thinking', () => ({
+  lookupModelCapabilitiesWithThinking: mocks.lookupModelCapabilities,
 }))
 
 vi.mock('../worker-manager', () => ({
@@ -144,8 +144,8 @@ describe('pi.models IPC handlers', () => {
       ok: true,
       models: { 'glm-5.3': { name: 'GLM-5.3', reasoning: true, input: ['text'], contextWindow: 1_000_000, maxTokens: 131_072 } },
     })
-    const result = await mocks.handlers.get('ipc:pi.models.lookup')!({ ids: ['glm-5.3'] })
-    expect(mocks.lookupModelCapabilities).toHaveBeenCalledWith(['glm-5.3'])
+    const result = await mocks.handlers.get('ipc:pi.models.lookup')!({ ids: ['glm-5.3'], provider: '自建', baseUrl: 'https://relay.example/v1' })
+    expect(mocks.lookupModelCapabilities).toHaveBeenCalledWith(['glm-5.3'], '自建', 'https://relay.example/v1')
     expect(result).toMatchObject({ ok: true, models: { 'glm-5.3': { contextWindow: 1_000_000 } } })
   })
   it('upgrades host global Pi without switching SDK selection or stopping workers', async () => {

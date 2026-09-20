@@ -89,6 +89,8 @@ const electron = await vi.hoisted(async () => {
   }
 
   class FakeNotification extends EventEmitter {
+    static instances: FakeNotification[] = []
+    constructor(readonly options: unknown) { super(); FakeNotification.instances.push(this) }
     static isSupported() { return true }
     show = vi.fn()
   }
@@ -97,6 +99,7 @@ const electron = await vi.hoisted(async () => {
 })
 
 vi.mock('electron', () => ({
+  nativeTheme: { shouldUseDarkColors: false, on: vi.fn() },
   app: electron.app,
   BrowserWindow: electron.FakeWindow,
   Tray: electron.FakeTray,
@@ -147,6 +150,7 @@ beforeEach(() => {
   electron.ipcMain.removeAllListeners()
   electron.windows.length = 0
   electron.trays.length = 0
+  electron.FakeNotification.instances.length = 0
   electron.state.active = false
   electron.state.allClosed = false
   electron.state.nextHostLoad = null
@@ -209,6 +213,19 @@ function card(notificationId = 'notification-1'): CompletionCard {
 }
 
 describe('main window and notification lifecycle', () => {
+  it('uses a system notification when explicitly selected and restores the session on click', async () => {
+    const runtime = await start('win32')
+    runtime.main.hide()
+    await runtime.presentCompletionCard({ ...card(), sessionFile: 'C:/sessions/example.jsonl' }, 'system')
+    expect(electron.windows).toHaveLength(1)
+    const notification = electron.FakeNotification.instances[0]
+    expect(notification.options).toMatchObject({ title: 'Done', body: 'Finished' })
+    expect(notification.show).toHaveBeenCalledOnce()
+    notification.emit('click')
+    await flushLifecycle()
+    expect(runtime.main.isVisible()).toBe(true)
+    expect(runtime.main.webContents.send).toHaveBeenCalledWith('ipc:notification-open-session', expect.objectContaining({ ok: true, sessionId: 'session', sessionFile: 'C:/sessions/example.jsonl' }))
+  })
   it('lets an explicit update quit complete without replacing it with app.exit', async () => {
     const runtime = await start('win32')
     updates.installing = true

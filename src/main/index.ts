@@ -136,6 +136,10 @@ app.whenReady().then(() => {
   // click / session open pays a cold dynamic import (~1s+ with a global SDK).
   setImmediate(() => {
     void import('./ipc/sdk-session').then(({ warmSdkModules }) => warmSdkModules(app.getPath('userData')))
+    void import('./model-thinking-migration').then(({ migrateLegacyModelThinking }) => {
+      void migrateLegacyModelThinking()
+      setInterval(() => { void migrateLegacyModelThinking() }, 5 * 60_000).unref()
+    })
   })
   // 不自动打开上次项目：进 app 显示空 Project Home，用户自行选择项目
 

@@ -5,7 +5,7 @@ import { workerManager } from '../../worker-manager'
 import { configStore } from '../../config-store'
 import { readPiInfo, readResourceList } from '../../pi-info'
 import { readModelsConfig, writeModelsConfig, fetchRemoteModelIds } from '../../pi-models-json'
-import { lookupModelCapabilities } from '../../models-dev-lookup'
+import { lookupModelCapabilitiesWithThinking } from '../../models-dev-thinking'
 import { clearGlobalSdkPathCache, readSdkSelection } from '../../sdk-loader'
 import {
   readSdkStatusCached,
@@ -98,7 +98,7 @@ export function registerPiSdkHandlers(): void {
   )
 
   registerHandlerWithSchema('ipc:pi.models.lookup', piModelsLookupSchema, async (req) =>
-    lookupModelCapabilities(req.ids),
+    lookupModelCapabilitiesWithThinking(req.ids, req.provider, req.baseUrl),
   )
   registerHandler('ipc:sdk.status', async (req) => {
     const refresh = req?.refresh === true

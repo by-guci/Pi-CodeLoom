@@ -3,9 +3,11 @@ import { getActiveSdkModule } from './ipc/sdk-session'
 import { getThinkingModelWithSdk } from './active-sdk-models'
 import { lookupThinkingRecord } from './models-dev-thinking'
 import { workerManager } from './worker-manager'
+import { migrateLegacyModelThinking } from './model-thinking-migration'
 import { resolveThinkingOptions, type ThinkingModel, type ModelThinkingOptions } from '@shared/model-thinking'
 
 export async function getModelThinkingOptions(modelKey: string, sessionFile?: string): Promise<ModelThinkingOptions> {
+  await migrateLegacyModelThinking()
   const separator = modelKey.indexOf('/')
   const unknown: ModelThinkingOptions = { model: modelKey, kind: 'unknown', options: [], source: 'unknown' }
   if (separator <= 0 || separator === modelKey.length - 1) return unknown

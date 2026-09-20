@@ -3,6 +3,7 @@
 import type { AppEvent } from './app-events'
 import type { AppUpdateState } from './app-update'
 import type { ModelThinkingOptions } from './model-thinking'
+import type { PackageCatalog, PackageStoreState } from './package-store'
 import type { CompatibilityLevel } from './extension-types'
 import type { ModelAuthProjection } from './model-auth-projection'
 import type { SessionContextPreview } from './session-context-preview'
@@ -191,13 +192,14 @@ export interface PiModelsFetchResponse {
   error?: string
 }
 
-export interface PiModelsLookupRequest { ids: string[] }
+export interface PiModelsLookupRequest { ids: string[]; provider?: string; baseUrl?: string }
 export interface PiModelsLookupSpec {
   name?: string
   reasoning?: boolean
   input?: ('text' | 'image')[]
   contextWindow?: number
   maxTokens?: number
+  thinkingLevelMap?: Record<string, string | null>
 }
 export interface PiModelsLookupResponse {
   ok: boolean
@@ -301,6 +303,12 @@ export interface EventsSubscribeResponse { subscriptionId: string }
 
 // ── IPC Method Map ──
 export interface IpcMethodMap {
+  'packages.browse': { request: { search?: string; type?: '' | 'extension' | 'skill' | 'prompt' | 'theme'; sort?: 'downloads' | 'recent' | 'name'; page?: number }; response: PackageCatalog }
+  'packages.state': { request: { latest?: boolean; refresh?: boolean }; response: PackageStoreState }
+  'packages.checkUpdates': { request: Record<string, never>; response: PackageStoreState }
+  'packages.updateAll': { request: Record<string, never>; response: PackageStoreState }
+  'packages.mutate': { request: { action: 'install' | 'update' | 'remove'; name: string }; response: PackageStoreState }
+  'packages.open': { request: { name?: string }; response: { ok: boolean } }
   'workspace.open': { request: WorkspaceOpenRequest; response: WorkspaceOpenResponse }
   'workspace.ensureWorker': { request: WorkspaceEnsureWorkerRequest; response: WorkspaceEnsureWorkerResponse }
   'workspace.switch': { request: WorkspaceSwitchRequest; response: WorkspaceSwitchResponse }

@@ -219,7 +219,7 @@ export function ModelsSettingsPanel() {
   const fillModelsFromCatalog = useCallback(async (providerId: string, ids: string[]) => {
     if (!ids.length) return 0
     try {
-      const res = await ipcClient.invoke('pi.models.lookup', { ids })
+      const res = await ipcClient.invoke('pi.models.lookup', { ids, provider: providerId, baseUrl: draft?.providers[providerId]?.baseUrl || undefined })
       const specs = res?.ok ? res.models : undefined
       if (!specs || !Object.keys(specs).length) return 0
       patchDraft((c) => {
@@ -235,7 +235,7 @@ export function ModelsSettingsPanel() {
       console.error('[models.lookup]', error)
       return 0
     }
-  }, [patchDraft])
+  }, [patchDraft, draft])
 
   const addModelToLocal = (providerId: string, modelId: string) => {
     if ((draft?.providers[providerId].models || []).some((m) => m.id === modelId)) return

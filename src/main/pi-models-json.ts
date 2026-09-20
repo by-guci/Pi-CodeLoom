@@ -46,7 +46,7 @@ export function getModelsJsonPath(agentDir = resolveActiveAgentDir()): string {
   return join(agentDir, 'models.json')
 }
 
-function stripJsonComments(input: string): string {
+export function stripJsonComments(input: string): string {
   return input
     .replace(/"(?:\\.|[^"\\])*"|\/\/[^\n]*/g, (m) => (m[0] === '"' ? m : ''))
     .replace(/"(?:\\.|[^"\\])*"|,(\s*[}\]])/g, (m, tail) => tail ?? (m[0] === '"' ? m : ''))

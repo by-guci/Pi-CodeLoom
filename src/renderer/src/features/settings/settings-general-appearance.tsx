@@ -10,7 +10,7 @@ import { AppearanceThemePresets } from '@renderer/features/settings/appearance-t
 import { RuntimeSettingsPanel } from '@renderer/features/settings/runtime-settings-panel'
 import { SettingsPageHeader } from '@renderer/features/settings/settings-shell'
 import { SettingRow, SettingsSection } from '@renderer/features/settings/settings-page-shared'
-import { btnOutline, numberInputCls } from '@renderer/features/settings/settings-controls'
+import { btnOutline, numberInputCls, selectCls } from '@renderer/features/settings/settings-controls'
 import { Switch } from '@renderer/components/ui/switch'
 import {
   Folder,
@@ -84,6 +84,7 @@ export function GeneralSettings() {
   const {
     draft,
     setAutoOpenLastProject,
+    setCloseWindowAction,
     setLanguage,
     setAlertSoundEnabled,
     setAlertNotificationEnabled,
@@ -145,6 +146,14 @@ export function GeneralSettings() {
           <Switch checked={draft.autoOpenLastProject} onCheckedChange={setAutoOpenLastProject} />
         </SettingRow>
         <p className="px-1 text-xs text-muted-foreground">{t('settings:general.localMaintenance')}</p>
+        {window.piDesktop?.platform === 'win32' ? (
+          <SettingRow label={t('settings:general.closeWindowAction')} description={t('settings:general.closeWindowActionDesc')}>
+            <select className={selectCls} aria-label={t('settings:general.closeWindowAction')} value={draft.closeWindowAction ?? 'quit'} onChange={(event) => setCloseWindowAction(event.target.value as 'quit' | 'tray')}>
+              <option value="quit">{t('settings:general.closeWindowQuit')}</option>
+              <option value="tray">{t('settings:general.closeWindowTray')}</option>
+            </select>
+          </SettingRow>
+        ) : null}
       </SettingsSection>
 
       <SettingsSection
