@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { X } from '@renderer/components/icons'
 import { connectAppUpdates, useAppUpdateStore } from '@renderer/lib/app-update-store'
 import { AppUpdatePanel } from '@renderer/features/settings/app-update-panel'
@@ -18,17 +17,12 @@ export function AppUpdateNotice() {
   useEffect(() => connectAppUpdates(), [])
 
   useEffect(() => {
-    if (!state?.notify || !['available', 'downloaded'].includes(state.phase)) {
-      toast.dismiss('app-update')
-      return
-    }
+    if (state?.phase === 'checking') announced.current = ''
+    if (!state?.notify || !['available', 'downloaded'].includes(state.phase)) return
     const key = `${state.phase}:${state.version}`
     if (announced.current === key) return
     announced.current = key
-    toast(t(`settings:updates.status.${state.phase}`, { version: state.version }), {
-      id: 'app-update', duration: Infinity,
-      action: { label: t('settings:updates.details'), onClick: () => useAppUpdateStore.setState({ open: true }) },
-    })
+    useAppUpdateStore.setState({ open: true })
   }, [state, t])
 
   useEffect(() => {

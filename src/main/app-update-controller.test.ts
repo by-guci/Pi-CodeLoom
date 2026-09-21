@@ -28,7 +28,7 @@ describe('desktop app updates', () => {
   it('pins the public release source and requires explicit download and installation', async () => {
     const { controller, engine } = setup()
     expect(engine.setFeedURL).toHaveBeenCalledWith(expect.objectContaining({ provider: 'github', owner: 'by-guci', repo: 'Pi-CodeLoom', private: false }))
-    expect(engine).toMatchObject({ autoDownload: false, autoInstallOnAppQuit: false, allowDowngrade: false, allowPrerelease: false, disableWebInstaller: true })
+    expect(engine).toMatchObject({ autoDownload: false, autoInstallOnAppQuit: false, allowDowngrade: false, allowPrerelease: false, disableWebInstaller: true, disableDifferentialDownload: true })
     await controller.check(true)
     expect(controller.state).toMatchObject({ phase: 'available', version: '1.0.8', notes: 'Fix conversation navigation', notify: true })
     expect(engine.downloadUpdate).not.toHaveBeenCalled()
@@ -50,11 +50,12 @@ describe('desktop app updates', () => {
     expect(engine.checkForUpdates).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps ignored versions quiet automatically, but manual checks can find them', async () => {
+  it('defers a notification for this launch without persistently ignoring the version', async () => {
     const { controller, prefs } = setup()
     await controller.check(true)
     controller.ignore()
-    expect(prefs.ignoredVersion).toBe('1.0.8')
+    expect(prefs.ignoredVersion).toBeNull()
+    expect(controller.state.notify).toBe(false)
     prefs.lastCheckedAt = null
     await controller.check(false)
     expect(controller.state.notify).toBe(false)
@@ -62,20 +63,65 @@ describe('desktop app updates', () => {
     expect(controller.state.notify).toBe(true)
   })
 
-  it('honors disabled automatic checks, cooldown, and development mode', async () => {
+  it('checks once each launch despite legacy disabled checks or recent check timestamps', async () => {
     const { controller, engine, prefs } = setup()
     prefs.autoCheck = false
-    await controller.check(false)
-    expect(engine.checkForUpdates).not.toHaveBeenCalled()
-    prefs.autoCheck = true
+    prefs.ignoredVersion = '1.0.8'
     prefs.lastCheckedAt = Date.now()
     await controller.check(false)
-    expect(engine.checkForUpdates).not.toHaveBeenCalled()
-    await controller.check(true)
     expect(engine.checkForUpdates).toHaveBeenCalledOnce()
+    expect(controller.state.notify).toBe(true)
+    await controller.check(false)
+    expect(engine.checkForUpdates).toHaveBeenCalledOnce()
+    await controller.check(true)
+    expect(engine.checkForUpdates).toHaveBeenCalledTimes(2)
     const dev = setup('development')
     await dev.controller.check(true)
     expect(dev.engine.checkForUpdates).not.toHaveBeenCalled()
+  })
+
+  it('waits for validation at 100 percent and rejects duplicate downloads and stale check events', async () => {
+    const { controller, engine } = setup()
+    await controller.check(false)
+    let finish!: (paths: string[]) => void
+    engine.downloadUpdate.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve }))
+    const downloading = controller.download()
+    engine.emit('download-progress', { percent: 100, transferred: 100, total: 100 })
+    expect(controller.state).toMatchObject({ phase: 'verifying', percent: 100 })
+    engine.emit('update-available', info)
+    engine.emit('update-not-available', info)
+    await controller.download()
+    await controller.check(true)
+    await controller.install()
+    expect(engine.downloadUpdate).toHaveBeenCalledOnce()
+    expect(engine.checkForUpdates).toHaveBeenCalledOnce()
+    expect(engine.quitAndInstall).not.toHaveBeenCalled()
+    engine.emit('update-downloaded', info)
+    finish(['update.exe'])
+    await downloading
+    await controller.download()
+    expect(controller.state.phase).toBe('downloaded')
+    expect(engine.downloadUpdate).toHaveBeenCalledOnce()
+  })
+
+  it('does not start a second download after a failure event until the first promise settles', async () => {
+    const { controller, engine } = setup()
+    await controller.check(true)
+    let reject!: (error: Error) => void
+    engine.downloadUpdate.mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail }))
+    const downloading = controller.download()
+    const error = Object.assign(new Error('checksum mismatch'), { code: 'ERR_CHECKSUM_MISMATCH' })
+    engine.emit('download-progress', { percent: 100 })
+    engine.emit('error', error)
+    await controller.download()
+    expect(engine.downloadUpdate).toHaveBeenCalledOnce()
+    reject(error)
+    await downloading
+    expect(controller.state).toMatchObject({ phase: 'available', error: 'download-verification-failed' })
+    expect(engine.downloadUpdate).toHaveBeenCalledOnce()
+    await controller.download()
+    expect(engine.downloadUpdate).toHaveBeenCalledTimes(2)
+    expect(controller.state.phase).toBe('downloaded')
   })
 
   it('reports an actual no-update result separately from failed checks and missing releases', async () => {

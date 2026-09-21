@@ -350,7 +350,6 @@ export interface IpcMethodMap {
   'app.update.download': { request: Record<string, never>; response: AppUpdateState }
   'app.update.install': { request: Record<string, never>; response: AppUpdateState }
   'app.update.ignore': { request: Record<string, never>; response: AppUpdateState }
-  'app.update.autoCheck': { request: { enabled: boolean }; response: AppUpdateState }
   'app.update.openRelease': { request: Record<string, never>; response: { ok: boolean } }
   'settings.set': { request: SettingsSetRequest; response: SettingsSetResponse }
   'sdk.upgradeGlobal': { request: SdkUpgradeGlobalRequest; response: SdkUpgradeGlobalResponse }

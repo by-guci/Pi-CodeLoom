@@ -24,7 +24,7 @@ export function connectAppUpdates(): () => void {
   return () => { active = false; stop() }
 }
 
-export async function appUpdateAction(action: 'check' | 'download' | 'install' | 'ignore' | 'autoCheck' | 'openRelease', args = {}): Promise<void> {
+export async function appUpdateAction(action: 'check' | 'download' | 'install' | 'ignore' | 'openRelease', args = {}): Promise<void> {
   if (action === 'install' && anySettingsSliceDirty()) {
     useAppUpdateStore.setState({ actionError: 'unsaved-settings' })
     return

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Switch } from '@renderer/components/ui/switch'
 import { appUpdateAction, useAppUpdateStore } from '@renderer/lib/app-update-store'
 import { btnCompact, btnOutline, btnPrimary } from './settings-controls'
 import { AppReleaseNotes } from './app-release-notes'
@@ -8,7 +7,7 @@ export function AppUpdatePanel() {
   const { t } = useTranslation()
   const state = useAppUpdateStore((store) => store.state)
   const actionError = useAppUpdateStore((store) => store.actionError)
-  const busy = !state || ['checking', 'downloading', 'installing'].includes(state.phase)
+  const busy = !state || ['checking', 'downloading', 'verifying', 'installing'].includes(state.phase)
   const unavailable = !state || state.mode === 'development'
   const error = actionError || state?.error
 
@@ -23,7 +22,7 @@ export function AppUpdatePanel() {
         </button>
       </div>
       {state?.mode !== 'automatic' && state ? <p className="text-xs text-muted-foreground">{t(`settings:updates.mode.${state.mode}`)}</p> : null}
-      {state?.phase === 'downloading' ? (
+      {state && ['downloading', 'verifying'].includes(state.phase) ? (
         <div className="space-y-1.5">
           <progress className="h-2 w-full accent-[var(--brand)]" aria-label={t('settings:updates.progress')} max={100} value={state.percent ?? undefined} />
           <p className="text-xs tabular-nums text-muted-foreground">{state.percent == null ? t('settings:updates.preparing') : `${Math.floor(state.percent)}%`}</p>
@@ -51,13 +50,7 @@ export function AppUpdatePanel() {
           }}>{t('settings:updates.ignore')}</button>
         ) : null}
       </div>
-      <div className="flex items-center justify-between gap-4 border-t border-border/50 pt-3">
-        <div>
-          <p className="text-sm text-foreground">{t('settings:updates.autoCheck')}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{t('settings:updates.autoCheckHint')}</p>
-        </div>
-        <Switch aria-label={t('settings:updates.autoCheck')} checked={state?.autoCheck ?? true} disabled={!state} onCheckedChange={(enabled) => void appUpdateAction('autoCheck', { enabled })} />
-      </div>
+      <p className="border-t border-border/50 pt-3 text-xs text-muted-foreground">{t('settings:updates.startupHint')}</p>
     </div>
   )
 }

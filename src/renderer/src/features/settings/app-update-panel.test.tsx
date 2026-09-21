@@ -11,7 +11,7 @@ vi.mock('@renderer/lib/ipc-client', () => ({ ipcClient: { invoke: mocks.invoke }
 const state: AppUpdateState = {
   revision: 1, currentVersion: '1.0.7', version: '1.0.8', phase: 'available', mode: 'automatic',
   notes: 'New themes', percent: null, transferred: null, total: null, error: null, notify: true,
-  autoCheck: true, lastCheckedAt: null,
+  lastCheckedAt: null,
 }
 
 beforeEach(async () => {
@@ -22,6 +22,15 @@ beforeEach(async () => {
 afterEach(cleanup)
 
 describe('app update controls', () => {
+  it('removes the automatic-update toggle and distinguishes verification from installation readiness', () => {
+    useAppUpdateStore.setState({ state: { ...state, phase: 'verifying', percent: 100 } })
+    render(<AppUpdatePanel />)
+    expect(screen.queryByRole('switch')).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent('正在校验安装包')
+    expect(screen.queryByRole('button', { name: '重启并安装' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '下载更新' })).toBeNull()
+    expect(screen.getByRole('button', { name: '检查更新' })).toBeDisabled()
+  })
   it('requires separate download and restart actions and displays live progress', async () => {
     render(<AppUpdatePanel />)
     fireEvent.click(screen.getByRole('button', { name: '下载更新' }))

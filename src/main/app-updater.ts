@@ -8,22 +8,17 @@ import { sendEvent } from './ipc/registry'
 
 let controller: AppUpdateController | null = null
 let startupTimer: ReturnType<typeof setTimeout> | null = null
-let checkTimer: ReturnType<typeof setInterval> | null = null
 
 export function initializeAppUpdater(options: { busy: () => boolean; prepareInstall: () => Promise<void> }): void {
   if (controller) return
   const mode = !app.isPackaged ? 'development'
     : process.env.PORTABLE_EXECUTABLE_DIR || (process.platform === 'linux' && !process.env.APPIMAGE) ? 'manual' : 'automatic'
   const preferences = (): AppUpdatePreferences => ({
-    autoCheck: configStore.get('appUpdateAutoCheck'),
-    ignoredVersion: configStore.get('appUpdateIgnoredVersion'),
     lastCheckedAt: configStore.get('appUpdateLastCheckedAt'),
   })
   controller = new AppUpdateController({
     engine: electronUpdater.autoUpdater, currentVersion: app.getVersion(), mode, ...options, preferences,
     save: (patch) => {
-      if (patch.autoCheck !== undefined) configStore.set('appUpdateAutoCheck', patch.autoCheck)
-      if (patch.ignoredVersion !== undefined) configStore.set('appUpdateIgnoredVersion', patch.ignoredVersion)
       if (patch.lastCheckedAt !== undefined) configStore.set('appUpdateLastCheckedAt', patch.lastCheckedAt)
     },
     notify: (state) => {
@@ -32,10 +27,8 @@ export function initializeAppUpdater(options: { busy: () => boolean; prepareInst
     },
   })
   if (mode !== 'development') {
-    startupTimer = setTimeout(() => { void controller?.check(false) }, 10_000)
-    checkTimer = setInterval(() => { void controller?.check(false) }, 6 * 60 * 60 * 1000)
+    startupTimer = setTimeout(() => { startupTimer = null; void controller?.check(false) }, 3000)
     startupTimer.unref()
-    checkTimer.unref()
   }
 }
 
@@ -48,9 +41,7 @@ export function isAppUpdateInstalling(): boolean { return controller?.state.phas
 
 export function stopAppUpdateChecks(): void {
   if (startupTimer) clearTimeout(startupTimer)
-  if (checkTimer) clearInterval(checkTimer)
   startupTimer = null
-  checkTimer = null
 }
 
 export async function openAppReleasePage(): Promise<{ ok: true }> {

@@ -4,8 +4,9 @@ Pi-CodeLoom 使用 `electron-updater` 检查本仓库的正式 GitHub Release。
 
 ## 用户操作
 
-- 安装版启动后约 10 秒检查更新，之后每 6 小时检查一次；可在 **设置 → 关于 → 应用更新** 关闭自动检查。
-- 发现新版本后显示提醒，可查看说明、下载更新，或者忽略该版本。
+- 安装版每次启动后约 3 秒检查一次更新，不定时轮询；**设置 → 关于 → 应用更新** 保留手动检查入口。
+- 发现新版本后自动打开更新说明弹窗，由用户选择下载或“稍后再说”；稍后再说仅关闭本次提醒。
+- 直接下载完整安装包，100% 后显示“正在校验”；校验成功才允许安装。失败后由用户点击重试，已校验的缓存包可在重启后复用。
 - 下载完成后点击 **重启并安装**。普通退出不会自动安装；有运行中的任务或未保存的设置时，应先处理再安装。
 - 网络、文件校验或安装失败会显示错误，支持重试或打开发布页。
 - 开发模式不检查远端更新，避免用源码运行时误安装发布版。
@@ -60,7 +61,7 @@ git push origin v1.0.8
 
 ## English summary
 
-Updates come from stable GitHub Releases in `by-guci/Pi-CodeLoom`. Checks run after launch and every six hours, with manual controls under **Settings → About → App updates**. Downloads and installation both require explicit user actions. Normal app exit does not install an update.
+Updates come from stable GitHub Releases in `by-guci/Pi-CodeLoom`. One check runs about three seconds after each launch, with manual controls under **Settings → About → App updates**. An available update opens a dialog. Downloads and installation both require explicit user actions. Full installers are downloaded and verified before installation is offered; valid cached downloads are reused. Normal app exit does not install an update.
 
 Windows NSIS and Linux AppImage support in-app installation. Windows Portable and other Linux packages use manual downloads. macOS automatic updates require a signed app and the ZIP artifact.
 
